@@ -12,6 +12,41 @@ const sampleMessages = [
   "Greetings from Ontario.", "My permanent corner of the internet.", "Worth every penny. All 100 of them."
 ];
 
+const plantNamePlaceholders = [
+  "Big Dave", "Definitely Not A Moose", "Maple McMapleface", "Leaf Erikson",
+  "Captain Syrup", "Your Favourite Cousin", "Just Some Canadian", "Not A Bot, Promise",
+  "NorthernNerd", "Sorry Eh", "Professional Leaf Owner", "Person With Excellent Priorities"
+];
+const plantMessagePlaceholders = [
+  "I can't believe I bought this.", "This felt financially responsible.", "Cheaper than naming a star.",
+  "Please tell my accountant this was necessary.", "I came. I saw. I planted.", "Future historians: you're welcome.",
+  "One dollar. Zero regrets.", "Apparently I own internet foliage now.", "Put this on my permanent record.",
+  "Mom, look! I own a leaf.", "I was told there'd be maple syrup.", "This seemed important at 2AM."
+];
+let lastPlantNamePlaceholder = null;
+let lastPlantMessagePlaceholder = null;
+
+function randomDifferent(options, previous) {
+  if (options.length < 2) return options[0] || "";
+  let choice;
+  do choice = options[Math.floor(Math.random() * options.length)]; while (choice === previous);
+  return choice;
+}
+function refreshPlantPlaceholders() {
+  const nameInput = document.getElementById("plantName");
+  const messageInput = document.getElementById("plantMessage");
+  const emailInput = document.getElementById("plantEmail");
+  lastPlantNamePlaceholder = randomDifferent(plantNamePlaceholders, lastPlantNamePlaceholder);
+  lastPlantMessagePlaceholder = randomDifferent(plantMessagePlaceholders, lastPlantMessagePlaceholder);
+  if (nameInput) nameInput.placeholder = lastPlantNamePlaceholder;
+  if (messageInput) messageInput.placeholder = lastPlantMessagePlaceholder;
+  if (emailInput) emailInput.placeholder = "you@example.com";
+}
+function openPlantDialog() {
+  refreshPlantPlaceholders();
+  plantDialog.showModal();
+}
+
 function seeded(seed) {
   let value = seed >>> 0;
   return () => ((value = Math.imul(1664525, value) + 1013904223 >>> 0) / 4294967296);
@@ -116,7 +151,7 @@ function openLeaf(id) {
     dialogBody.innerHTML = `<span class="leaf-card-number">LEAF #${number}</span>
       <h2>This leaf is available.</h2><p>Plant it for $1, or choose $5, $10, or $25+ to grow a bigger leaf.</p>
       <button class="button primary full" id="claimThisLeaf">Choose your leaf size</button>`;
-    dialogBody.querySelector("#claimThisLeaf").addEventListener("click", () => { leafDialog.close(); plantDialog.showModal(); });
+    dialogBody.querySelector("#claimThisLeaf").addEventListener("click", () => { leafDialog.close(); openPlantDialog(); });
   }
   leafDialog.showModal();
 }
@@ -133,7 +168,8 @@ leafLayer.addEventListener("keydown", event => {
 document.querySelectorAll("[data-open]").forEach(button => {
   button.addEventListener("click", event => {
     event.preventDefault();
-    (button.dataset.open === "plant" ? plantDialog : freeEntryDialog).showModal();
+    if (button.dataset.open === "plant") openPlantDialog();
+    else freeEntryDialog.showModal();
   });
 });
 document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => button.closest("dialog").close()));
