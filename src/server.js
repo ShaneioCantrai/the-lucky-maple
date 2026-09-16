@@ -10,6 +10,7 @@ import { contestEntrySchema, helpApplicationSchema, mockPurchaseSchema } from '.
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
+const bindAddress = process.env.BIND_ADDRESS || '0.0.0.0';
 const rulesVersion = process.env.RULES_VERSION || 'prototype-0.1';
 const identitySecret = process.env.IDENTITY_HASH_SECRET || 'development-only-change-me';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -52,6 +53,28 @@ app.get('/api/stats', async (_req, res, next) => {
       helpDeliveredCents: Number(row.help_delivered_cents),
       helpBalanceCents: Number(row.help_balance_cents),
     });
+  } catch (error) { next(error); }
+});
+
+app.get('/api/campaign/current', async (_req, res, next) => {
+  try {
+    const result = await pool.query('SELECT * FROM public_current_campaign LIMIT 1');
+    res.json({ campaign: result.rows[0] || null });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/share-events', async (req, res, next) => {
+  try {
+    const eventType = String(req.body?.eventType || '');
+    const shareId = String(req.body?.shareId || '').trim();
+    const channel = String(req.body?.channel || 'unknown').trim().slice(0, 32);
+    if (!['share_start','visit'].includes(eventType) || !/^[a-zA-Z0-9_-]{6,64}$/.test(shareId)) {
+      return res.status(400).json({ error: 'Invalid share event.' });
+    }
+    const campaign = await pool.query(`SELECT id FROM aid_campaigns WHERE status='active' LIMIT 1`);
+    await pool.query(`INSERT INTO share_events (campaign_id,event_type,share_id,channel)
+      VALUES ($1,$2,$3,$4)`, [campaign.rows[0]?.id || null, eventType, shareId, channel || 'unknown']);
+    res.status(204).end();
   } catch (error) { next(error); }
 });
 
@@ -173,8 +196,8 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ error: 'Internal server error.' });
 });
 
-const server = app.listen(port, '0.0.0.0', () => {
-  console.log(`The Lucky Maple listening on :${port}`);
+const server = app.listen(port, bindAddress, () => {
+  console.log(`The Lucky Maple listening on ${bindAddress}:${port}`);
 });
 
 async function shutdown(signal) {

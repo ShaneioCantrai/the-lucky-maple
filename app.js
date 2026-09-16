@@ -140,6 +140,14 @@ function shareUrl(channel) {
   url.searchParams.set("share", channel);
   return url.toString();
 }
+function recordShareEvent(eventType, channel, shareId = getShareId()) {
+  fetch('/api/share-events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ eventType, shareId, channel })
+  }).catch(() => {});
+}
+
 function createAmbientLeaves() {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const count = innerWidth < 760 ? 4 : 9;
@@ -248,6 +256,7 @@ async function copyShareLink(channel = "copy") {
 
 async function handleShare(channel) {
   updateShareCount(true);
+  recordShareEvent('share_start', channel);
   const url = shareUrl(channel);
   const title = "The Lucky Maple";
   const text = "Small leaf. Big change. Help this maple tree reach one more Canadian.";
@@ -275,7 +284,14 @@ document.querySelectorAll("[data-share]").forEach(button => {
 
 const incomingShare = new URL(location.href);
 if (incomingShare.searchParams.get("via")) {
-  sessionStorage.setItem("luckyMapleIncomingVia", incomingShare.searchParams.get("via"));
-  sessionStorage.setItem("luckyMapleIncomingChannel", incomingShare.searchParams.get("share") || "unknown");
+  const via = incomingShare.searchParams.get("via");
+  const channel = incomingShare.searchParams.get("share") || "unknown";
+  sessionStorage.setItem("luckyMapleIncomingVia", via);
+  sessionStorage.setItem("luckyMapleIncomingChannel", channel);
+  const visitKey = `luckyMapleVisit:${via}:${channel}`;
+  if (!sessionStorage.getItem(visitKey)) {
+    sessionStorage.setItem(visitKey, '1');
+    recordShareEvent('visit', channel, via);
+  }
 }
 updateShareCount(false);

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#f6edd8" />
+  <title>Lucky Maple Admin</title>
+  <link rel="stylesheet" href="/admin.css" />
+</head>
+<body>
+  <header class="admin-topbar">
+    <div class="brand"><span>🍁</span><div><b>The Lucky Maple</b><small>Private operations console</small></div></div>
+    <div class="status-pill"><span class="dot"></span> Private admin</div>
+  </header>
+
+  <main class="shell">
+    <section class="page-heading">
+      <div><span class="eyebrow">OPERATIONS</span><h1>One tree. One Canadian. One clear outcome.</h1></div>
+      <button id="refresh" class="button ghost">Refresh</button>
+    </section>
+
+    <section class="metric-grid" aria-label="Today's activity">
+      <article><span>Today</span><strong id="todayGross">$0</strong><small>gross contributions</small></article>
+      <article><span>Sharing</span><strong id="shareStarts">0</strong><small>share attempts</small></article>
+      <article><span>Reach</span><strong id="referredVisits">0</strong><small>referred visits</small></article>
+      <article><span>Inbox</span><strong id="openCases">0</strong><small>open help requests</small></article>
+    </section>
+    <section class="two-col">
+      <article class="panel current-panel">
+        <div class="panel-heading"><div><span class="eyebrow">CURRENT TREE</span><h2 id="currentTitle">No active tree</h2></div><span id="currentStatus" class="tag">READY</span></div>
+        <div id="currentEmpty" class="empty-state">Create and verify a campaign below, then activate it when it is ready to go public.</div>
+        <div id="currentDetails" class="hidden">
+          <p id="currentWho" class="recipient"></p>
+          <p id="currentSummary" class="summary"></p>
+          <div class="progress-copy"><b id="currentRaised">$0</b><span>of <b id="currentGoal">$0</b></span></div>
+          <div class="progress"><div id="currentProgress"></div></div>
+          <div class="progress-meta"><span><b id="currentLeaves">0</b> leaves</span><span><b id="currentRemaining">$0</b> remaining</span></div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <span class="eyebrow">SAFETY CHECK</span><h2>Before a tree goes live</h2>
+        <div class="check-row">✓ Identity / need verified</div>
+        <div class="check-row">✓ Recipient approved public story</div>
+        <div class="check-row">✓ Goal tied to a specific documented need</div>
+        <div class="check-row">✓ Payment path and outcome proof ready</div>
+        <p class="muted">The backend refuses to activate a campaign until verification and story consent are recorded.</p>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">NEW TREE</span><h2>Create a campaign</h2></div><span class="tag soft">DRAFT FIRST</span></div>
+      <form id="campaignForm" class="campaign-form">
+        <label>Public slug<input name="slug" required placeholder="sarah-sudbury" /></label>
+        <label>Recipient display name<input name="recipientAlias" required placeholder="Sarah" /></label>
+        <label>City<input name="city" placeholder="Sudbury" /></label>
+        <label>Province<input name="province" required placeholder="Ontario" /></label>
+        <label class="wide">Headline<input name="title" required placeholder="Help Sarah get back on the road." /></label>
+        <label class="wide">Short public story<textarea name="summary" required rows="4" placeholder="What happened, what is needed, and what changes when the goal is reached."></textarea></label>
+        <label>Goal (CAD)<input name="goal" required type="number" min="1" step="1" placeholder="650" /></label>
+        <label class="check"><input name="verified" type="checkbox" /> Need verified</label>
+        <label class="check"><input name="storyConsent" type="checkbox" /> Recipient approved public story</label>
+        <div class="wide form-actions"><button class="button primary" type="submit">Create draft tree</button><span id="formStatus"></span></div>
+      </form>
+    </section>
+    <section class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">THE GROVE</span><h2>Campaigns</h2></div><span class="muted" id="campaignCount">0 total</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Person / need</th><th>Status</th><th>Goal</th><th>Raised</th><th>Verification</th><th></th></tr></thead><tbody id="campaignRows"></tbody></table></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">NOMINATIONS / REQUESTS</span><h2>Help inbox</h2></div></div>
+      <div class="table-wrap"><table><thead><tr><th>Applicant</th><th>Province</th><th>Category</th><th>Requested</th><th>Status</th></tr></thead><tbody id="caseRows"></tbody></table></div>
+    </section>
+
+    <footer>Private administrative interface · not intended for public internet exposure.</footer>
+  </main>
+  <script src="/admin.js"></script>
+</body>
+</html>
