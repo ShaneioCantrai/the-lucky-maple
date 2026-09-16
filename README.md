@@ -55,3 +55,16 @@ Contest entry is a separate record from leaf ownership. Buying a leaf does not c
 ## Important
 
 The `rules.html` included here is a product placeholder, not final legal contest rules. Final production rules should be reviewed before launch.
+
+## Backend foundation
+
+The initial static tree prototype is preserved as-is. The backend foundation adds PostgreSQL-backed ownership, weekly contest entries, direct-help cases, public impact statistics and an append-only help-fund ledger.
+
+Current mission model:
+- each paid leaf remains $1 CAD;
+- exactly 50¢ per paid leaf is allocated to direct help for neurodivergent Canadians;
+- direct assistance is needs-based and separate from the giveaway;
+- weekly giveaway prizes are funded separately by the company/founder/sponsors;
+- publicity is optional for assistance recipients and is never a condition of receiving help.
+
+See `docs/PROJECT_SPEC.md` for the authoritative implementation plan.

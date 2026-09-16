@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-luckymaple}
+      POSTGRES_USER: ${POSTGRES_USER:-luckymaple}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-luckymaple} -d ${POSTGRES_DB:-luckymaple}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-luckymaple}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-luckymaple}
+      IDENTITY_HASH_SECRET: ${IDENTITY_HASH_SECRET}
+      RULES_VERSION: ${RULES_VERSION:-prototype-0.1}
+      ENABLE_HELP_APPLICATIONS: ${ENABLE_HELP_APPLICATIONS:-false}
+      ENABLE_MOCK_PURCHASES: ${ENABLE_MOCK_PURCHASES:-false}
+      SEED_PROTOTYPE_CONTEST: ${SEED_PROTOTYPE_CONTEST:-false}
+    ports:
+      - "${WEB_BIND:-0.0.0.0}:${WEB_PORT:-3000}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

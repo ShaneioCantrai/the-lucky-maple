@@ -1,0 +1,36 @@
+{
+  "name": "luckymaple",
+  "version": "1.0.0",
+  "description": "A deliberately simple internet object: one enormous interactive maple tree, permanent $1 leaves, and a separately funded Canada-only weekly promotional giveaway.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ShaneioCantrai/the-lucky-maple.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ShaneioCantrai/the-lucky-maple/issues"
+  },
+  "homepage": "https://github.com/ShaneioCantrai/the-lucky-maple#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "helmet": "^8.3.0",
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  },
+  "type": "module"
+}
