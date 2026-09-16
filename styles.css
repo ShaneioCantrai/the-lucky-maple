@@ -202,6 +202,15 @@ label.check input { width: auto; margin: 2px 0 0; }
 label.check em { font-weight: 400; }
 .modal > small { display: block; margin-top: 10px; color: #776d5d; line-height: 1.4; }
 .form-status { min-height: 20px; margin-bottom: 0 !important; font-weight: 800; }
+.leaf-tier-picker { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; margin: 17px 0 12px; }
+.leaf-tier-option { min-height: 65px; border: 1px solid #d6c6a9; border-radius: 15px; background: #fffdf7; color: var(--ink); cursor: pointer; display: grid; place-items: center; align-content: center; gap: 1px; transition: transform .14s ease, border-color .14s ease, background .14s ease; }
+.leaf-tier-option:hover { transform: translateY(-1px); border-color: #b89668; }
+.leaf-tier-option.selected { border-color: var(--red); background: #fff0e8; box-shadow: 0 0 0 2px rgba(223,69,52,.12); }
+.leaf-tier-option b { color: var(--red-dark); font-size: 20px; line-height: 1; }
+.leaf-tier-option span { color: #776453; font-size: 10px; font-weight: 800; }
+.custom-amount.hidden { display: none; }
+.leaf-contribution { margin: 8px 0 4px; color: var(--green); font-size: 13px; font-weight: 900; }
+.leaf.leaf-tier-25 { filter: drop-shadow(0 2px 3px rgba(99,64,20,.16)); }
 .leaf-card-number { font-size: 12px; font-weight: 900; letter-spacing: .12em; color: var(--green); }
 .leaf-card-message { margin: 14px 0; padding: 14px; border-radius: 14px; background: #efe4cd; font-style: italic; }
 @media (max-width: 1120px) {

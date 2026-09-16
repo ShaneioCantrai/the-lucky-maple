@@ -20,7 +20,21 @@ function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
 }
 function money(cents) { return `$${(Number(cents || 0) / 100).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD`; }
+function leafTierForAmount(cents) {
+  const dollars = Number(cents || 0) / 100;
+  if (dollars >= 25) return 25;
+  if (dollars >= 10) return 10;
+  if (dollars >= 5) return 5;
+  return 1;
+}
+function leafScaleForAmount(cents) {
+  return ({ 1: 1, 5: 1.25, 10: 1.5, 25: 1.85 })[leafTierForAmount(cents)];
+}
+function tierName(cents) {
+  return ({ 1: 'Leaf', 5: 'Bigger leaf', 10: 'Large leaf', 25: 'Largest leaf' })[leafTierForAmount(cents)];
+}
 const random = seeded(8675309);
+const tierRandom = seeded(20260916);
 const leaves = [];
 const canopyZones = [
   [836, 230, 410, 205, 270],
@@ -47,10 +61,15 @@ function makeLeafElement(leaf) {
 function refreshLeafElement(leaf) {
   if (!leaf.element) return;
   const variant = leaf.claimed ? `claimed-${["a", "b", "c"][leaf.id % 3]}` : "available";
-  const spriteIndex = leaf.claimed ? ((leaf.id * 7) % 12) + 1 : 6;
+  const spriteIndex = leaf.spriteVariant || (leaf.claimed ? ((leaf.id * 7) % 12) + 1 : 6);
+  leaf.element.setAttribute("x", leaf.x - leaf.size / 2);
+  leaf.element.setAttribute("y", leaf.y - leaf.size / 2);
+  leaf.element.setAttribute("width", leaf.size);
+  leaf.element.setAttribute("height", leaf.size);
+  leaf.element.setAttribute("transform", `rotate(${leaf.rotation} ${leaf.x} ${leaf.y})`);
   leaf.element.setAttribute("href", `img/web/leaves/leaf-${String(spriteIndex).padStart(2, "0")}.webp`);
-  leaf.element.setAttribute("class", `leaf ${variant}`);
-  leaf.element.setAttribute("aria-label", leaf.claimed ? `Claimed leaf ${leaf.id}` : `Available leaf ${leaf.id}`);
+  leaf.element.setAttribute("class", `leaf ${variant} leaf-tier-${leafTierForAmount(leaf.amountCents)}`);
+  leaf.element.setAttribute("aria-label", leaf.claimed ? `Claimed ${tierName(leaf.amountCents)} ${leaf.id}` : `Available leaf ${leaf.id}`);
 }
 
 let nextId = 1;
@@ -58,12 +77,16 @@ for (const [cx, cy, rx, ry, count] of canopyZones) {
   for (let i = 0; i < count; i++) {
     const angle = random() * Math.PI * 2;
     const radius = Math.sqrt(random());
+    const baseSize = 22 + random() * 16;
     const leaf = {
       id: nextId++, x: cx + Math.cos(angle) * rx * radius, y: cy + Math.sin(angle) * ry * radius,
-      size: 22 + random() * 16, rotation: Math.round(random() * 80 - 40), claimed: random() < .22,
-      owner: null, message: null, element: null
+      baseSize, size: baseSize, rotation: Math.round(random() * 80 - 40), claimed: random() < .22,
+      amountCents: 0, spriteVariant: null, owner: null, message: null, element: null
     };
     if (leaf.claimed) {
+      const tierRoll = tierRandom();
+      leaf.amountCents = tierRoll < .60 ? 100 : tierRoll < .82 ? 500 : tierRoll < .94 ? 1000 : [2500, 5000, 10000][Math.floor(tierRandom() * 3)];
+      leaf.size = leaf.baseSize * leafScaleForAmount(leaf.amountCents);
       leaf.owner = sampleOwners[leaf.id % sampleOwners.length];
       leaf.message = sampleMessages[leaf.id % sampleMessages.length];
     }
@@ -82,15 +105,17 @@ function openLeaf(id) {
   if (!leaf) return;
   const number = String(id).padStart(6, "0");
   if (leaf.claimed) {
+    const contributionAmount = money(leaf.amountCents || 100).replace(".00 CAD", "");
     dialogBody.innerHTML = `<span class="leaf-card-number">LEAF #${number}</span>
       <h2>${escapeHtml(leaf.owner || "Lucky Maple Friend")}</h2>
+      <div class="leaf-contribution">🍁 ${contributionAmount} · ${tierName(leaf.amountCents || 100)}</div>
       <div class="leaf-card-message">“${escapeHtml(leaf.message || "Planted on The Lucky Maple.")}”</div>
       <button class="button ghost full" id="copyLeafLink">Copy leaf link</button>`;
     dialogBody.querySelector("#copyLeafLink").addEventListener("click", () => navigator.clipboard?.writeText(`${location.origin}${location.pathname}#leaf-${id}`));
   } else {
     dialogBody.innerHTML = `<span class="leaf-card-number">LEAF #${number}</span>
-      <h2>This leaf is available.</h2><p>Put your name and a short message on this exact leaf for $1 CAD.</p>
-      <button class="button primary full" id="claimThisLeaf">Plant this leaf · $1</button>`;
+      <h2>This leaf is available.</h2><p>Plant it for $1, or choose $5, $10, or $25+ to grow a bigger leaf.</p>
+      <button class="button primary full" id="claimThisLeaf">Choose your leaf size</button>`;
     dialogBody.querySelector("#claimThisLeaf").addEventListener("click", () => { leafDialog.close(); plantDialog.showModal(); });
   }
   leafDialog.showModal();
@@ -119,8 +144,32 @@ document.querySelectorAll("dialog").forEach(dialog => {
   });
 });
 
+let selectedLeafAmount = 1;
+function selectedContributionAmount() {
+  if (selectedLeafAmount !== 25) return selectedLeafAmount;
+  const custom = Math.max(25, Number(document.getElementById("plantAmount")?.value || 25));
+  return Math.round(custom * 100) / 100;
+}
+function refreshContributionPicker() {
+  document.querySelectorAll("[data-leaf-amount]").forEach(button => {
+    button.classList.toggle("selected", Number(button.dataset.leafAmount) === selectedLeafAmount);
+  });
+  document.getElementById("customAmountLabel")?.classList.toggle("hidden", selectedLeafAmount !== 25);
+  const amount = selectedContributionAmount();
+  document.getElementById("mockCheckout").textContent = `Continue · $${amount.toLocaleString("en-CA", { maximumFractionDigits: 2 })} CAD`;
+}
+document.querySelectorAll("[data-leaf-amount]").forEach(button => {
+  button.addEventListener("click", () => {
+    selectedLeafAmount = Number(button.dataset.leafAmount);
+    refreshContributionPicker();
+  });
+});
+document.getElementById("plantAmount")?.addEventListener("input", refreshContributionPicker);
+refreshContributionPicker();
 document.getElementById("mockCheckout").addEventListener("click", event => {
-  event.currentTarget.textContent = "Payment wiring comes next";
+  const amount = selectedContributionAmount();
+  event.currentTarget.textContent = `Payment wiring comes next · $${amount.toLocaleString("en-CA", { maximumFractionDigits: 2 })}`;
+  setTimeout(refreshContributionPicker, 1600);
 });
 
 const SHARE_ID_KEY = "luckyMapleShareId";
@@ -175,16 +224,60 @@ document.addEventListener("visibilitychange", () => document.body.classList.togg
 
 const requestedLeaf = location.hash.match(/^#leaf-(\d+)$/);
 if (requestedLeaf) setTimeout(() => openLeaf(Number(requestedLeaf[1])), 180);
+function hydrateCampaignLeaves(rows = []) {
+  leaves.forEach(leaf => {
+    leaf.claimed = false;
+    leaf.amountCents = 0;
+    leaf.size = leaf.baseSize;
+    leaf.owner = null;
+    leaf.message = null;
+    leaf.spriteVariant = null;
+    refreshLeafElement(leaf);
+  });
+  let filled = 0;
+  for (const row of rows) {
+    const slot = Number(row.leaf_slot);
+    const leaf = leaves[slot - 1];
+    if (!leaf) continue;
+    leaf.claimed = true;
+    leaf.amountCents = Number(row.gross_cents || 100);
+    leaf.size = leaf.baseSize * leafScaleForAmount(leaf.amountCents);
+    leaf.owner = row.display_name || "Anonymous Canadian";
+    leaf.message = row.message || "Planted on The Lucky Maple.";
+    leaf.spriteVariant = Number(row.sprite_variant) || null;
+    refreshLeafElement(leaf);
+    filled += 1;
+  }
+  updateLeafCount(filled);
+}
+
 async function loadPublicData() {
+  let activeCampaign = null;
   try {
-    const statsResponse = await fetch("/api/stats", { headers: { Accept: "application/json" } });
-    if (statsResponse.ok) {
-      const stats = await statsResponse.json();
-      updateLeafCount(stats.leavesPlanted);
-      document.getElementById("fundsRaised").textContent = money(stats.helpAllocatedCents);
-      document.getElementById("impactDelivered").textContent = money(stats.helpDeliveredCents).replace(" CAD", "");
+    const campaignResponse = await fetch("/api/campaign/current", { headers: { Accept: "application/json" } });
+    if (campaignResponse.ok) {
+      const data = await campaignResponse.json();
+      activeCampaign = data.campaign;
+      if (activeCampaign) {
+        document.getElementById("fundsRaised").textContent = money(activeCampaign.raised_cents);
+        updateLeafCount(activeCampaign.leaves_filled);
+        const leafResponse = await fetch("/api/campaign/leaves", { headers: { Accept: "application/json" } });
+        if (leafResponse.ok) hydrateCampaignLeaves((await leafResponse.json()).leaves || []);
+      }
     }
   } catch { /* static prototype fallback */ }
+
+  if (!activeCampaign) {
+    try {
+      const statsResponse = await fetch("/api/stats", { headers: { Accept: "application/json" } });
+      if (statsResponse.ok) {
+        const stats = await statsResponse.json();
+        updateLeafCount(stats.leavesPlanted);
+        document.getElementById("fundsRaised").textContent = money(stats.helpAllocatedCents);
+        document.getElementById("impactDelivered").textContent = money(stats.helpDeliveredCents).replace(" CAD", "");
+      }
+    } catch { /* static prototype fallback */ }
+  }
 
   try {
     const contestResponse = await fetch("/api/contest/current", { headers: { Accept: "application/json" } });
@@ -192,11 +285,13 @@ async function loadPublicData() {
       const { contest } = await contestResponse.json();
       if (contest) {
         const amount = money(contest.prize_cents);
-        document.getElementById("prizeAmount").textContent = amount;
-        document.getElementById("impactPrize").textContent = amount.replace(".00 CAD", "");
+        const prizeNode = document.getElementById("prizeAmount");
+        if (prizeNode) prizeNode.textContent = amount;
+        const impactPrize = document.getElementById("impactPrize");
+        if (impactPrize) impactPrize.textContent = amount.replace(".00 CAD", "");
       }
     }
-  } catch { /* static prototype fallback */ }
+  } catch { /* optional legacy contest data */ }
 }
 loadPublicData();
 document.getElementById("submitEntry").addEventListener("click", async event => {

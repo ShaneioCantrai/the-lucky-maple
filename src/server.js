@@ -63,6 +63,19 @@ app.get('/api/campaign/current', async (_req, res, next) => {
   } catch (error) { next(error); }
 });
 
+app.get('/api/campaign/leaves', async (_req, res, next) => {
+  try {
+    const result = await pool.query(`
+      SELECT x.id, x.display_name, x.message, x.gross_cents,
+             x.leaf_slot, x.sprite_variant, x.paid_at
+      FROM contributions x
+      JOIN aid_campaigns c ON c.id = x.campaign_id
+      WHERE c.status = 'active' AND x.status = 'paid' AND x.leaf_slot IS NOT NULL
+      ORDER BY x.leaf_slot ASC`);
+    res.json({ leaves: result.rows });
+  } catch (error) { next(error); }
+});
+
 app.post('/api/share-events', async (req, res, next) => {
   try {
     const eventType = String(req.body?.eventType || '');

@@ -24,7 +24,7 @@
       </nav>
       <div class="top-actions">
         <button class="button ghost" data-share="native">Share this tree</button>
-        <button class="button primary" data-open="plant">Plant a leaf · $1</button>
+        <button class="button primary" data-open="plant">Plant a leaf · $1+</button>
       </div>
     </header>
 
@@ -45,7 +45,7 @@
       </div>
       <section class="hero-copy" aria-labelledby="heroTitle">
         <h1 id="heroTitle">Small leaf.<br><span>Big change.</span></h1>
-        <p>Plant a leaf for <b>$1</b>, and <b>50¢</b> directly helps neurodivergent Canadians. You’ll also help grow our tree and our community.</p>
+        <p>Plant a leaf for <b>$1</b>. Choose <b>$5</b>, <b>$10</b>, or <b>$25+</b> and your leaf grows bigger too. Every contribution helps grow our tree and our community.</p>
       </section>
 
       <section class="share-card" aria-label="Share this tree">
@@ -108,13 +108,20 @@
   <dialog id="plantDialog" class="modal">
     <button class="close" data-close aria-label="Close">×</button>
     <span class="eyebrow">PLANT YOUR LEAF</span>
-    <h2>One leaf. One dollar. Yours.</h2>
-    <p>Choose a display name and a tiny message. Your leaf gets a permanent number on the tree.</p>
+    <h2>Choose how big your leaf grows.</h2>
+    <p>Every contribution plants one leaf. Bigger contributions grow a bigger leaf on the tree.</p>
+    <div class="leaf-tier-picker" role="group" aria-label="Choose contribution amount">
+      <button type="button" class="leaf-tier-option selected" data-leaf-amount="1"><b>$1</b><span>Leaf</span></button>
+      <button type="button" class="leaf-tier-option" data-leaf-amount="5"><b>$5</b><span>Bigger</span></button>
+      <button type="button" class="leaf-tier-option" data-leaf-amount="10"><b>$10</b><span>Large</span></button>
+      <button type="button" class="leaf-tier-option" data-leaf-amount="25"><b>$25+</b><span>Largest</span></button>
+    </div>
+    <label id="customAmountLabel" class="custom-amount hidden">Amount · minimum $25<input id="plantAmount" type="number" min="25" step="1" value="25" inputmode="decimal" /></label>
     <label>Display name<input id="plantName" maxlength="28" placeholder="Big Dave" /></label>
     <label>Leaf message<input id="plantMessage" maxlength="60" placeholder="I can't believe I bought this." /></label>
     <label>Email for receipt & recovery<input id="plantEmail" type="email" placeholder="you@example.com" /></label>
     <button class="button primary full" id="mockCheckout">Continue · $1 CAD</button>
-    <small>No account required. Payments are not connected in this prototype yet.</small>
+    <small>One contribution plants one leaf. $25 and above uses the largest leaf size. Payments are not connected in this prototype yet.</small>
   </dialog>
 
   <dialog id="freeEntryDialog" class="modal">
