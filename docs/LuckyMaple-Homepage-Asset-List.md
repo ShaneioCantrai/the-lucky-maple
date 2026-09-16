@@ -3,7 +3,7 @@
 Status: production art plan for approved homepage concept #3.
 
 Authoritative visual reference:
-`docs/concepts/lucky-maple-homepage-concept-03.png`
+`docs/concepts/lucky-maple-homepage-concept-03.webp`
 
 ## Art direction
 

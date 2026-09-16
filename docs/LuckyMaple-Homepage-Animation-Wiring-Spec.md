@@ -3,7 +3,7 @@
 Status: implementation spec for approved homepage concept #3.
 
 Visual reference:
-`docs/concepts/lucky-maple-homepage-concept-03.png`
+`docs/concepts/lucky-maple-homepage-concept-03.webp`
 
 Related art manifest:
 `docs/LuckyMaple-Homepage-Asset-List.md`
