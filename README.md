@@ -1,4 +1,4 @@
-# The Lucky Maple
+# MapleWish
 
 A deliberately simple internet object: one enormous interactive maple tree, permanent $1 leaves, and a separately funded Canada-only weekly promotional giveaway.
 

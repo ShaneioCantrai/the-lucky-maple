@@ -1,4 +1,4 @@
-# The Lucky Maple — Product & Technical Specification
+# MapleWish — Product & Technical Specification
 
 Status: Prototype / pre-launch  
 Owner: Maple Vibe Inc.  
@@ -6,7 +6,7 @@ Primary market at launch: Canada
 
 ## 1. Product premise
 
-The Lucky Maple is one enormous public digital maple tree. A visitor can plant a permanent leaf for **$1 CAD** and attach a display name plus a short public message.
+MapleWish is one enormous public digital maple tree. A visitor can plant a permanent leaf for **$1 CAD** and attach a display name plus a short public message.
 
 For every paid leaf, **50¢ is allocated to a direct-help fund for neurodivergent Canadians**. The allocation is recorded in an append-only public-impact ledger.
 

@@ -30,7 +30,7 @@ function requireAdmin(req, res, next) {
     const user = split >= 0 ? decoded.slice(0, split) : '';
     const pass = split >= 0 ? decoded.slice(split + 1) : '';
     if (safeEqual(user, adminUser) && safeEqual(pass, adminPassword)) return next();
-  }  res.set('WWW-Authenticate', 'Basic realm="Lucky Maple Admin"');
+  }  res.set('WWW-Authenticate', 'Basic realm="MapleWish Admin"');
   res.status(401).send('Authentication required.');
 }
 
@@ -146,7 +146,7 @@ app.use((error, _req, res, _next) => {
 });
 
 const server = app.listen(port, bind, () => {
-  console.log(`Lucky Maple admin listening on http://${bind}:${port}`);
+  console.log(`MapleWish admin listening on http://${bind}:${port}`);
 });
 
 async function shutdown(signal) {

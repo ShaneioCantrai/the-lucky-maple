@@ -142,9 +142,9 @@ function openLeaf(id) {
   if (leaf.claimed) {
     const contributionAmount = money(leaf.amountCents || 100).replace(".00 CAD", "");
     dialogBody.innerHTML = `<span class="leaf-card-number">LEAF #${number}</span>
-      <h2>${escapeHtml(leaf.owner || "Lucky Maple Friend")}</h2>
+      <h2>${escapeHtml(leaf.owner || "MapleWish Friend")}</h2>
       <div class="leaf-contribution">🍁 ${contributionAmount} · ${tierName(leaf.amountCents || 100)}</div>
-      <div class="leaf-card-message">“${escapeHtml(leaf.message || "Planted on The Lucky Maple.")}”</div>
+      <div class="leaf-card-message">“${escapeHtml(leaf.message || "Planted on MapleWish.")}”</div>
       <button class="button ghost full" id="copyLeafLink">Copy leaf link</button>`;
     dialogBody.querySelector("#copyLeafLink").addEventListener("click", () => navigator.clipboard?.writeText(`${location.origin}${location.pathname}#leaf-${id}`));
   } else {
@@ -279,7 +279,7 @@ function hydrateCampaignLeaves(rows = []) {
     leaf.amountCents = Number(row.gross_cents || 100);
     leaf.size = leaf.baseSize * leafScaleForAmount(leaf.amountCents);
     leaf.owner = row.display_name || "Anonymous Canadian";
-    leaf.message = row.message || "Planted on The Lucky Maple.";
+    leaf.message = row.message || "Planted on MapleWish.";
     leaf.spriteVariant = Number(row.sprite_variant) || null;
     refreshLeafElement(leaf);
     filled += 1;
@@ -400,7 +400,7 @@ async function handleShare(channel) {
   updateShareCount(true);
   recordShareEvent('share_start', channel);
   const url = shareUrl(channel);
-  const title = "The Lucky Maple";
+  const title = "MapleWish";
   const text = "Small leaf. Big change. Help this maple tree reach one more Canadian.";
   if (channel === "native") {
     if (navigator.share) {

@@ -1,4 +1,4 @@
-"""Cut the 4x3 Lucky Maple leaf atlas into transparent web sprites.
+"""Cut the 4x3 MapleWish leaf atlas into transparent web sprites.
 
 Dev dependency: pip install opencv-python-headless
 The atlas includes soft coloured presentation backgrounds and labels, so alpha

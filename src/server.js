@@ -210,7 +210,7 @@ app.use((error, _req, res, _next) => {
 });
 
 const server = app.listen(port, bindAddress, () => {
-  console.log(`The Lucky Maple listening on ${bindAddress}:${port}`);
+  console.log(`MapleWish listening on ${bindAddress}:${port}`);
 });
 
 async function shutdown(signal) {

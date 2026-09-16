@@ -1,4 +1,4 @@
-﻿# The Lucky Maple â€” Homepage Asset List
+﻿# MapleWish â€” Homepage Asset List
 
 Status: production art plan for approved homepage concept #3.
 
@@ -41,7 +41,7 @@ Important production rule: dynamic or legal text must remain HTML/CSS, not baked
 
 Recommended scenic master canvas: 2560Ã—1440 or larger, composed so a safe centre crop works at 16:9, 16:10 and tablet widths.
 
-## B. Main Lucky Maple tree
+## B. Main MapleWish tree
 
 | Asset ID | Description | Runtime form | Motion |
 |---|---|---|---|

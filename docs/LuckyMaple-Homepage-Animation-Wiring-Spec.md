@@ -1,4 +1,4 @@
-﻿# The Lucky Maple â€” Homepage Animation & Wiring Spec
+﻿# MapleWish â€” Homepage Animation & Wiring Spec
 
 Status: implementation spec for approved homepage concept #3.
 
