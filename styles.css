@@ -93,11 +93,18 @@ a { color: inherit; }
 }
 .hero-copy {
   position: absolute; z-index: 20; left: 3.3%; top: 6%; width: 29%; max-width: 430px;
-  text-shadow: 0 2px 0 rgba(255,255,255,.4);
+  padding: 20px 24px 22px;
+  border: 1px solid rgba(255,255,255,.82);
+  border-radius: 28px;
+  background: rgba(255,249,233,.82);
+  box-shadow: 0 14px 36px rgba(66,42,24,.18);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  text-shadow: 0 1px 0 rgba(255,255,255,.5);
 }
 .hero-copy h1 { margin: 0; font-family: 'Chewy', cursive; font-size: clamp(48px, 5vw, 83px); line-height: .9; font-weight: 400; letter-spacing: .01em; color: #43251b; }
 .hero-copy h1 span { color: #bf3d26; }
-.hero-copy p { max-width: 390px; margin: 19px 0 0; font-size: clamp(15px, 1.15vw, 20px); line-height: 1.42; font-weight: 600; }
+.hero-copy p { max-width: 390px; margin: 19px 0 0; color: #3f2d22; font-size: clamp(15px, 1.15vw, 20px); line-height: 1.42; font-weight: 700; }
 .hero-copy p b { color: #cf3c28; }
 
 .giveaway-card {
