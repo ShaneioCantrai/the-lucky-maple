@@ -1,3 +1,5 @@
+import { CANOPY_ZONES, PURCHASE_LEAF_SLOT_ORDER, isStarterLeafSlot, seeded } from "./leaf-layout.js";
+
 const NS = "http://www.w3.org/2000/svg";
 const leafLayer = document.getElementById("leafLayer");
 const leafDialog = document.getElementById("leafDialog");
@@ -5,12 +7,6 @@ const plantDialog = document.getElementById("plantDialog");
 const freeEntryDialog = document.getElementById("freeEntryDialog");
 const dialogBody = document.getElementById("leafDialogBody");
 const ambientLeaves = document.getElementById("ambientLeaves");
-
-const sampleOwners = ["Big Dave", "Sarah M.", "NorthernNerd", "MapleMom", "Jofeesh", "A Very Lucky Goose", "Chris from Barrie", "LeafMeAlone"];
-const sampleMessages = [
-  "I can't believe I bought this.", "For the grandkids 🍁", "This seemed important at 2AM.",
-  "Greetings from Ontario.", "My permanent corner of the internet.", "Worth every penny. All 100 of them."
-];
 
 const plantNamePlaceholders = [
   "Big Dave", "Definitely Not A Moose", "Maple McMapleface", "Leaf Erikson",
@@ -47,10 +43,6 @@ function openPlantDialog() {
   plantDialog.showModal();
 }
 
-function seeded(seed) {
-  let value = seed >>> 0;
-  return () => ((value = Math.imul(1664525, value) + 1013904223 >>> 0) / 4294967296);
-}
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
 }
@@ -69,15 +61,7 @@ function tierName(cents) {
   return ({ 1: 'Leaf', 5: 'Bigger leaf', 10: 'Large leaf', 25: 'Largest leaf' })[leafTierForAmount(cents)];
 }
 const random = seeded(8675309);
-const tierRandom = seeded(20260916);
 const leaves = [];
-const canopyZones = [
-  [836, 230, 410, 205, 270],
-  [590, 350, 270, 165, 165],
-  [1080, 345, 290, 175, 170],
-  [745, 440, 330, 170, 185],
-  [960, 455, 310, 165, 175]
-];
 
 function makeLeafElement(leaf) {
   const use = document.createElementNS(NS, "image");
@@ -95,8 +79,11 @@ function makeLeafElement(leaf) {
 }
 function refreshLeafElement(leaf) {
   if (!leaf.element) return;
-  const variant = leaf.claimed ? `claimed-${["a", "b", "c"][leaf.id % 3]}` : "available";
-  const spriteIndex = leaf.spriteVariant || (leaf.claimed ? ((leaf.id * 7) % 12) + 1 : 6);
+  const natural = !leaf.claimed && leaf.natural;
+  const variant = leaf.claimed ? `claimed-${["a", "b", "c"][leaf.id % 3]}` : natural ? "natural" : "available";
+  const spriteIndex = leaf.claimed
+    ? (leaf.spriteVariant || ((leaf.id * 7) % 12) + 1)
+    : natural ? leaf.naturalSpriteVariant : 6;
   leaf.element.setAttribute("x", leaf.x - leaf.size / 2);
   leaf.element.setAttribute("y", leaf.y - leaf.size / 2);
   leaf.element.setAttribute("width", leaf.size);
@@ -108,23 +95,18 @@ function refreshLeafElement(leaf) {
 }
 
 let nextId = 1;
-for (const [cx, cy, rx, ry, count] of canopyZones) {
+for (const { cx, cy, rx, ry, count } of CANOPY_ZONES) {
   for (let i = 0; i < count; i++) {
     const angle = random() * Math.PI * 2;
     const radius = Math.sqrt(random());
     const baseSize = 22 + random() * 16;
+    const id = nextId++;
     const leaf = {
-      id: nextId++, x: cx + Math.cos(angle) * rx * radius, y: cy + Math.sin(angle) * ry * radius,
-      baseSize, size: baseSize, rotation: Math.round(random() * 80 - 40), claimed: random() < .22,
+      id, x: cx + Math.cos(angle) * rx * radius, y: cy + Math.sin(angle) * ry * radius,
+      baseSize, size: baseSize, rotation: Math.round(random() * 80 - 40), claimed: false,
+      natural: isStarterLeafSlot(id), naturalSpriteVariant: ((id * 5 + 3) % 12) + 1,
       amountCents: 0, spriteVariant: null, owner: null, message: null, element: null
     };
-    if (leaf.claimed) {
-      const tierRoll = tierRandom();
-      leaf.amountCents = tierRoll < .60 ? 100 : tierRoll < .82 ? 500 : tierRoll < .94 ? 1000 : [2500, 5000, 10000][Math.floor(tierRandom() * 3)];
-      leaf.size = leaf.baseSize * leafScaleForAmount(leaf.amountCents);
-      leaf.owner = sampleOwners[leaf.id % sampleOwners.length];
-      leaf.message = sampleMessages[leaf.id % sampleMessages.length];
-    }
     leaves.push(leaf);
     makeLeafElement(leaf);
   }
@@ -315,7 +297,7 @@ async function loadPublicData() {
         if (legacyResponse.ok) {
           const legacy = (await legacyResponse.json()).leaves || [];
           hydrateCampaignLeaves(legacy.map((leaf, index) => ({
-            leaf_slot: index + 1, gross_cents: 100,
+            leaf_slot: PURCHASE_LEAF_SLOT_ORDER[index] || index + 1, gross_cents: 100,
             display_name: leaf.display_name, message: leaf.message,
             sprite_variant: ((Number(leaf.id) * 7) % 12) + 1
           })));

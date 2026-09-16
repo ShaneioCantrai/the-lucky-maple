@@ -27,6 +27,7 @@ app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100 }));
 app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(repoRoot, 'index.html')));
 app.get('/rules.html', (_req, res) => res.sendFile(path.join(repoRoot, 'rules.html')));
 app.get('/app.js', (_req, res) => res.sendFile(path.join(repoRoot, 'app.js')));
+app.get('/leaf-layout.js', (_req, res) => res.sendFile(path.join(repoRoot, 'leaf-layout.js')));
 app.get('/styles.css', (_req, res) => res.sendFile(path.join(repoRoot, 'styles.css')));
 app.use('/img/web', express.static(path.join(repoRoot, 'img', 'web'), { maxAge: '1h', immutable: false }));
 
