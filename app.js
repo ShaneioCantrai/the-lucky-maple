@@ -120,6 +120,26 @@ document.querySelectorAll("dialog").forEach(dialog => {
 document.getElementById("mockCheckout").addEventListener("click", event => {
   event.currentTarget.textContent = "Payment wiring comes next";
 });
+
+const SHARE_ID_KEY = "luckyMapleShareId";
+const SHARE_COUNT_KEY = "luckyMapleShareStarts";
+function getShareId() {
+  let value = localStorage.getItem(SHARE_ID_KEY);
+  if (!value) {
+    value = (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`).replace(/[^a-z0-9]/gi, "").slice(0, 10).toLowerCase();
+    localStorage.setItem(SHARE_ID_KEY, value);
+  }
+  return value;
+}
+function shareUrl(channel) {
+  const url = new URL(location.href);
+  url.hash = "";
+  url.searchParams.delete("via");
+  url.searchParams.delete("share");
+  url.searchParams.set("via", getShareId());
+  url.searchParams.set("share", channel);
+  return url.toString();
+}
 function createAmbientLeaves() {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
   const count = innerWidth < 760 ? 4 : 9;
@@ -193,3 +213,69 @@ document.getElementById("submitEntry").addEventListener("click", async event => 
   } catch (error) { status.textContent = error.message || "The entry service is not available yet."; }
   finally { button.disabled = false; }
 });
+
+
+function updateShareCount(increment = false) {
+  let count = Number(localStorage.getItem(SHARE_COUNT_KEY) || 0);
+  if (increment) {
+    count += 1;
+    localStorage.setItem(SHARE_COUNT_KEY, String(count));
+  }
+  const node = document.getElementById("shareClicks");
+  if (node) node.textContent = count.toLocaleString("en-CA");
+}
+function showShareToast(message) {
+  let toast = document.querySelector(".share-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.className = "share-toast";
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.classList.add("show");
+  clearTimeout(showShareToast.timer);
+  showShareToast.timer = setTimeout(() => toast.classList.remove("show"), 1800);
+}
+async function copyShareLink(channel = "copy") {
+  const url = shareUrl(channel);
+  try {
+    await navigator.clipboard.writeText(url);
+    showShareToast("Trackable share link copied");
+  } catch {
+    window.prompt("Copy this link:", url);
+  }
+}
+
+async function handleShare(channel) {
+  updateShareCount(true);
+  const url = shareUrl(channel);
+  const title = "The Lucky Maple";
+  const text = "Small leaf. Big change. Help this maple tree reach one more Canadian.";
+  if (channel === "native") {
+    if (navigator.share) {
+      try { await navigator.share({ title, text, url }); return; }
+      catch (error) { if (error?.name === "AbortError") return; }
+    }
+    await copyShareLink("native");
+    return;
+  }
+  if (channel === "facebook") window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer,width=680,height=520");
+  else if (channel === "whatsapp") window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, "_blank", "noopener,noreferrer");
+  else if (channel === "x") window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, "_blank", "noopener,noreferrer,width=680,height=520");
+  else if (channel === "email") location.href = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${text}\n\n${url}`)}`;
+  else if (channel === "copy") await copyShareLink("copy");
+}
+
+document.querySelectorAll("[data-share]").forEach(button => {
+  button.addEventListener("click", event => {
+    event.preventDefault();
+    handleShare(button.dataset.share || "native");
+  });
+});
+
+const incomingShare = new URL(location.href);
+if (incomingShare.searchParams.get("via")) {
+  sessionStorage.setItem("luckyMapleIncomingVia", incomingShare.searchParams.get("via"));
+  sessionStorage.setItem("luckyMapleIncomingChannel", incomingShare.searchParams.get("share") || "unknown");
+}
+updateShareCount(false);

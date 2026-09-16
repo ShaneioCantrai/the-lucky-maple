@@ -23,7 +23,7 @@
         <a href="#winners">Past Winners</a>
       </nav>
       <div class="top-actions">
-        <button class="button ghost" data-open="free-entry">Enter free</button>
+        <button class="button ghost" data-share="native">Share this tree</button>
         <button class="button primary" data-open="plant">Plant a leaf · $1</button>
       </div>
     </header>
@@ -48,12 +48,19 @@
         <p>Plant a leaf for <b>$1</b>, and <b>50¢</b> directly helps neurodivergent Canadians. You’ll also help grow our tree and our community.</p>
       </section>
 
-      <section class="giveaway-card" aria-label="This week's giveaway">
-        <span class="card-kicker">🎁 THIS WEEK’S GIVEAWAY</span>
-        <strong id="prizeAmount">$100 CAD</strong>
-        <p>One eligible Canadian entrant wins every week.</p>
-        <button class="button primary full" data-open="free-entry">Enter free →</button>
-        <small>No purchase necessary. Buying a leaf does not improve your odds.</small>
+      <section class="share-card" aria-label="Share this tree">
+        <span class="card-kicker">📣 HELP THIS TREE TRAVEL</span>
+        <strong>Share the tree.</strong>
+        <p>Can't plant another leaf? Passing it on can bring the next person who can.</p>
+        <button class="button share-primary full" data-share="native">Share this tree →</button>
+        <div class="social-share-grid" aria-label="Share options">
+          <button class="social-button facebook" data-share="facebook"><span>f</span>Facebook</button>
+          <button class="social-button whatsapp" data-share="whatsapp"><span>●</span>WhatsApp</button>
+          <button class="social-button xshare" data-share="x"><span>𝕏</span>X</button>
+          <button class="social-button email" data-share="email"><span>✉</span>Email</button>
+          <button class="social-button copy" data-share="copy"><span>↗</span>Copy link</button>
+        </div>
+        <small class="share-meta"><b id="shareClicks">0</b> shares started on this device · shared links carry a referral tag.</small>
       </section>
 
       <aside class="impact-card" id="impact">
