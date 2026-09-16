@@ -1,9 +1,9 @@
-# The Lucky Maple — Homepage Animation & Wiring Spec
+﻿# The Lucky Maple â€” Homepage Animation & Wiring Spec
 
 Status: implementation spec for approved homepage concept #3.
 
 Visual reference:
-`docs/concepts/lucky-maple-homepage-concept-03.webp`
+`docs/concepts/lucky-maple-homepage-concept-03.png`
 
 Related art manifest:
 `docs/LuckyMaple-Homepage-Asset-List.md`
@@ -15,7 +15,7 @@ Rebuild concept #3 as a responsive, layered, interactive homepage that feels gen
 The motion language is `soft environmental life`, not game HUD, casino animation, or constant attention-grabbing movement.
 
 Primary user actions must remain obvious at all times:
-1. `Plant a leaf · $1`
+1. `Plant a leaf Â· $1`
 2. `Enter free`
 3. inspect owned/available leaves;
 4. understand how much direct help has been funded.
@@ -52,11 +52,11 @@ Use `position:absolute` inside a clipped hero scene. UI cards stay as semantic D
 ## Z-index bands
 
 Suggested bands:
-- 0–9: scenic background;
-- 10–19: tree and ground props;
-- 20–29: owned/available leaf interaction;
-- 30–39: ambient FX and wildlife;
-- 40–49: foreground decorative masks;
+- 0â€“9: scenic background;
+- 10â€“19: tree and ground props;
+- 20â€“29: owned/available leaf interaction;
+- 30â€“39: ambient FX and wildlife;
+- 40â€“49: foreground decorative masks;
 - 100+: functional UI, dialogs and accessibility focus states.
 ## Ambient animation controller
 
@@ -76,17 +76,17 @@ Pause requestAnimationFrame work when `document.hidden === true` and when the he
 ## Falling leaves
 
 Default desktop behaviour:
-- 6–10 leaves visible at once during calm periods;
-- display size roughly 16–48 CSS px;
-- fall duration 12–22 seconds;
-- horizontal drift 40–160 px over the full descent;
+- 6â€“10 leaves visible at once during calm periods;
+- display size roughly 16â€“48 CSS px;
+- fall duration 12â€“22 seconds;
+- horizontal drift 40â€“160 px over the full descent;
 - gentle sinusoidal side movement;
 - continuous slow rotation with randomized direction;
-- varied opacity around 0.7–1.0;
+- varied opacity around 0.7â€“1.0;
 - randomized depth using size, blur and speed.
 
 Mobile:
-- 3–5 leaves normally visible;
+- 3â€“5 leaves normally visible;
 - use fewer large foreground leaves;
 - never obscure the CTA buttons or legal text.
 
@@ -96,14 +96,14 @@ Use a single `<canvas>` for ambient falling leaves unless DOM sprites prove equa
 A gust is an occasional event, not a loop.
 
 Recommended cadence:
-- randomized every 12–28 seconds;
+- randomized every 12â€“28 seconds;
 - never schedule two gusts back-to-back;
 - suspend while a modal is open;
 - skip if `prefers-reduced-motion: reduce`.
 
 A gust may:
-- add 3–6 temporary falling leaves;
-- push existing particles sideways for 1.5–2.5 seconds;
+- add 3â€“6 temporary falling leaves;
+- push existing particles sideways for 1.5â€“2.5 seconds;
 - show one faint wind-swirl sprite;
 - increase canopy movement by a few pixels;
 - give the hanging sign one slightly larger sway.
@@ -115,55 +115,55 @@ Do not add screen shake, sound, or rapid movement.
 Use three canopy layers with slightly different timing.
 
 Suggested transform envelopes:
-- back canopy: translateX ±2 px, rotate ±0.15° over 10–14 s;
-- mid canopy: translateX ±3 px, rotate ±0.22° over 8–12 s;
-- front canopy: translateX ±4 px, rotate ±0.3° over 7–10 s.
+- back canopy: translateX Â±2 px, rotate Â±0.15Â° over 10â€“14 s;
+- mid canopy: translateX Â±3 px, rotate Â±0.22Â° over 8â€“12 s;
+- front canopy: translateX Â±4 px, rotate Â±0.3Â° over 7â€“10 s.
 
 Set transform origin low in the canopy, near where foliage meets major branches. Use smooth `ease-in-out` keyframes. The trunk remains still.
 
-During a wind gust, temporarily blend to roughly 1.5× normal amplitude, then settle without snapping.
+During a wind gust, temporarily blend to roughly 1.5Ã— normal amplitude, then settle without snapping.
 ## Background parallax
 
 Parallax should be almost subconscious.
 
 Pointer-driven maximum offsets on desktop:
-- mountains/clouds: 2–4 px;
-- treeline/lake: 4–6 px;
-- fence/ground props: 6–9 px;
-- foreground foliage: 10–14 px.
+- mountains/clouds: 2â€“4 px;
+- treeline/lake: 4â€“6 px;
+- fence/ground props: 6â€“9 px;
+- foreground foliage: 10â€“14 px.
 
-Interpolate toward the target position instead of following the pointer directly. A smoothing factor around 0.04–0.08 per frame is sufficient.
+Interpolate toward the target position instead of following the pointer directly. A smoothing factor around 0.04â€“0.08 per frame is sufficient.
 
 Disable pointer parallax on coarse-pointer/touch devices. Mobile may use a tiny scroll-linked vertical offset if it profiles cleanly, otherwise remain static.
 
 ## Lake and clouds
 
 Clouds:
-- drift horizontally over 90–160 seconds;
+- drift horizontally over 90â€“160 seconds;
 - movement must be nearly imperceptible;
 - loop with enough off-canvas padding that reset is invisible.
 
 Lake shimmer:
 - animate only a subtle highlight/mask;
-- 8–16 second opacity/translate cycle;
+- 8â€“16 second opacity/translate cycle;
 - no obvious repeating wave texture.
 
 ## Hanging sign
 
 The central wooden sign may sway around its top attachment point:
-- calm amplitude: about ±0.5°;
-- duration: 6–10 seconds;
-- wind gust: brief peak around ±1.2°;
+- calm amplitude: about Â±0.5Â°;
+- duration: 6â€“10 seconds;
+- wind gust: brief peak around Â±1.2Â°;
 - settle gradually.
 ## Bird idle behaviour
 
 The perched bird is an ambient reward for looking, not a mascot demanding attention.
 
 State timings:
-- blink every 5–12 seconds;
-- look left/right every 15–30 seconds;
-- optional tail/wing twitch every 20–45 seconds;
-- return to idle after 0.4–1.2 seconds.
+- blink every 5â€“12 seconds;
+- look left/right every 15â€“30 seconds;
+- optional tail/wing twitch every 20â€“45 seconds;
+- return to idle after 0.4â€“1.2 seconds.
 
 Do not animate all bird states at once. Randomize events and impose a minimum quiet period between them.
 
@@ -195,24 +195,24 @@ Use the existing backend as source of truth.
 
 ### `GET /api/stats`
 Bind:
-- `leavesPlanted` → tree-base counter and impact card;
-- `helpAllocatedCents` → funds/direct-help allocation display;
-- `helpDeliveredCents` → delivered-impact display when shown;
-- `helpBalanceCents` → optional detail view, not necessarily hero UI.
+- `leavesPlanted` â†’ tree-base counter and impact card;
+- `helpAllocatedCents` â†’ funds/direct-help allocation display;
+- `helpDeliveredCents` â†’ delivered-impact display when shown;
+- `helpBalanceCents` â†’ optional detail view, not necessarily hero UI.
 
 ### `GET /api/contest/current`
 Bind:
-- `prize_cents` → weekly giveaway amount;
-- `opens_at`, `closes_at`, `draw_at` → timing/status UI;
-- `sponsor_name` → optional sponsor credit;
-- `funding_source` → admin/audit use, not necessarily public hero copy.
+- `prize_cents` â†’ weekly giveaway amount;
+- `opens_at`, `closes_at`, `draw_at` â†’ timing/status UI;
+- `sponsor_name` â†’ optional sponsor credit;
+- `funding_source` â†’ admin/audit use, not necessarily public hero copy.
 
-If either endpoint fails, keep the page usable and show neutral placeholders such as `—` rather than invented numbers.
+If either endpoint fails, keep the page usable and show neutral placeholders such as `â€”` rather than invented numbers.
 
 ## Counter motion
 
 On first successful data load:
-- animate monetary/leaf counters from the previous rendered value to the current value over 600–900 ms;
+- animate monetary/leaf counters from the previous rendered value to the current value over 600â€“900 ms;
 - use ease-out interpolation;
 - do not animate from zero if it would imply funds are being raised live during page load;
 - subsequent updates may use a tiny one-time scale/opacity pulse.
@@ -220,14 +220,14 @@ On first successful data load:
 Respect reduced-motion preference by updating numbers instantly.
 ## Responsive behaviour
 
-### Desktop ≥ 1100 px
+### Desktop â‰¥ 1100 px
 - preserve concept #3 composition closely;
 - giveaway card left, impact card upper-right;
 - tree centred and dominant;
 - nav/actions across top;
 - three-step panel spans lower hero.
 
-### Tablet 700–1099 px
+### Tablet 700â€“1099 px
 - keep tree central;
 - reduce decorative foreground;
 - allow impact card to shrink or move below nav;
@@ -236,13 +236,13 @@ Respect reduced-motion preference by updating numbers instantly.
 
 ### Mobile < 700 px
 - use mobile scenic/tree crop;
-- top area: logo + primary `Plant a leaf · $1` CTA;
+- top area: logo + primary `Plant a leaf Â· $1` CTA;
 - tree occupies the visual centre;
 - giveaway and impact cards stack as normal document sections;
 - free-entry CTA remains obvious without requiring purchase interaction;
 - three-step strip becomes three stacked cards;
 - no pointer parallax;
-- ambient leaf count 3–5 maximum.
+- ambient leaf count 3â€“5 maximum.
 
 Do not scale desktop typography down until it becomes unreadable. Reflow instead.
 
@@ -264,7 +264,7 @@ Accessibility requirements:
 
 ## Performance guardrails
 
-- target smooth 60 fps on modern desktop, stable 30–60 fps on mid-range mobile;
+- target smooth 60 fps on modern desktop, stable 30â€“60 fps on mid-range mobile;
 - use one requestAnimationFrame loop for environmental JS motion;
 - prefer CSS transforms/opacity; avoid animating layout properties;
 - cap device-pixel-ratio for the FX canvas if needed;
@@ -292,14 +292,14 @@ Ambient particles must avoid or pass behind:
 
 When the static prototype is refactored, keep the pieces small:
 
-- `scene.js` — scene layer initialization and responsive art selection;
-- `ambient.js` — one animation loop, particles, gust scheduling and visibility pause;
-- `parallax.js` — pointer/scroll parallax only;
-- `tree-leaves.js` — deterministic owned/available leaf placement and hit interactions;
-- `stats.js` — `/api/stats` binding and counter updates;
-- `contest.js` — `/api/contest/current` binding and entry UI state;
-- `dialogs.js` — leaf, purchase and free-entry modal behaviour;
-- `motion-preferences.js` — reduced-motion/coarse-pointer capability state.
+- `scene.js` â€” scene layer initialization and responsive art selection;
+- `ambient.js` â€” one animation loop, particles, gust scheduling and visibility pause;
+- `parallax.js` â€” pointer/scroll parallax only;
+- `tree-leaves.js` â€” deterministic owned/available leaf placement and hit interactions;
+- `stats.js` â€” `/api/stats` binding and counter updates;
+- `contest.js` â€” `/api/contest/current` binding and entry UI state;
+- `dialogs.js` â€” leaf, purchase and free-entry modal behaviour;
+- `motion-preferences.js` â€” reduced-motion/coarse-pointer capability state.
 
 Do not introduce a large UI framework solely for these effects. The existing lightweight frontend can support the first production version.
 

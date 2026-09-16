@@ -1,9 +1,9 @@
-# The Lucky Maple — Homepage Asset List
+﻿# The Lucky Maple â€” Homepage Asset List
 
 Status: production art plan for approved homepage concept #3.
 
 Authoritative visual reference:
-`docs/concepts/lucky-maple-homepage-concept-03.webp`
+`docs/concepts/lucky-maple-homepage-concept-03.png`
 
 ## Art direction
 
@@ -39,7 +39,7 @@ Important production rule: dynamic or legal text must remain HTML/CSS, not baked
 | `lm-bg-foreground-left` | Bottom-left foliage frame | Alpha WebP | Foreground parallax |
 | `lm-bg-foreground-right` | Bottom-right foliage frame | Alpha WebP | Foreground parallax |
 
-Recommended scenic master canvas: 2560×1440 or larger, composed so a safe centre crop works at 16:9, 16:10 and tablet widths.
+Recommended scenic master canvas: 2560Ã—1440 or larger, composed so a safe centre crop works at 16:9, 16:10 and tablet widths.
 
 ## B. Main Lucky Maple tree
 
@@ -50,7 +50,7 @@ Recommended scenic master canvas: 2560×1440 or larger, composed so a safe centr
 | `lm-tree-canopy-mid` | Main foliage mass | Alpha WebP | Slow sway B |
 | `lm-tree-canopy-front` | Foreground leaf clusters | Alpha WebP | Slow sway C |
 | `lm-tree-face` | Optional subtle face overlay from concept | Alpha PNG | Static / blink optional |
-| `lm-tree-hanging-sign` | “A Kinder Brighter Canada” wooden sign shell | Alpha PNG | Tiny pendulum sway |
+| `lm-tree-hanging-sign` | â€œA Kinder Brighter Canadaâ€ wooden sign shell | Alpha PNG | Tiny pendulum sway |
 | `lm-tree-root-shadow` | Soft ground-contact shadow | Alpha WebP | Static |
 ## C. Interactive tree leaves
 
@@ -67,7 +67,7 @@ The interactive leaf system should sit above the painted canopy. The painted can
 | `lm-leaf-hover-ring` | Soft hover/keyboard-focus highlight | SVG/CSS |
 | `lm-leaf-selected-glow` | Selected-leaf glow | SVG/CSS |
 
-Create 2–3 silhouette variations and rotate/scale them algorithmically. Do not create thousands of unique image files.
+Create 2â€“3 silhouette variations and rotate/scale them algorithmically. Do not create thousands of unique image files.
 
 A leaf's tree position must be stable over time. Use `leaf_id` plus a versioned deterministic layout seed, or persist coordinates if the art layout later requires exact authored slots.
 
@@ -94,7 +94,7 @@ A leaf's tree position must be stable over time. Use `leaf_id` plus a versioned 
 | `lm-icon-impact-people` | People/help stat icon | SVG |
 | `lm-icon-impact-community` | Community-powered icon | SVG |
 | `lm-icon-info-small` | Small info/help mark | SVG |
-| `lm-impact-ribbon` | “Real people. Real support…” decorative ribbon | CSS/frame only; text HTML |
+| `lm-impact-ribbon` | â€œReal people. Real supportâ€¦â€ decorative ribbon | CSS/frame only; text HTML |
 
 All numbers in this panel are live API data. The panel background may be art; the amounts and labels are DOM text.
 
@@ -132,7 +132,7 @@ Create these as small transparent sprites with generous alpha padding so rotatio
 | `lm-fx-wind-swirl-01` / `02` | Very pale curved gust strokes |
 | `lm-fx-light-mote` | Soft atmospheric speck/glow |
 
-Target source size per falling leaf: 96–160 px square at 2x. Runtime display size is usually 16–48 CSS px.
+Target source size per falling leaf: 96â€“160 px square at 2x. Runtime display size is usually 16â€“48 CSS px.
 
 ## I. Wildlife / life accents
 
@@ -152,7 +152,7 @@ Do not add more animals to v1 unless they improve the composition after implemen
 
 | Asset ID | Description |
 |---|---|
-| `lm-sign-right-good-people` | “Good People Grow Here” sign shell; text can remain baked if purely decorative |
+| `lm-sign-right-good-people` | â€œGood People Grow Hereâ€ sign shell; text can remain baked if purely decorative |
 | `lm-rock-left` / `lm-rock-right` | Foreground rock clusters |
 | `lm-grass-left` / `lm-grass-right` | Foreground grass/flowers |
 | `lm-fallen-leaves-ground` | Ground leaf scatter overlay |
@@ -161,7 +161,7 @@ Do not add more animals to v1 unless they improve the composition after implemen
 The desktop composition cannot simply be scaled down. Prepare safe crops/layers so the tree remains dominant and the core message stays readable.
 
 Recommended responsive exports:
-- `lm-bg-mobile`: simplified portrait scenic background, about 1440×1920 source.
+- `lm-bg-mobile`: simplified portrait scenic background, about 1440Ã—1920 source.
 - `lm-tree-mobile`: tree composition tuned for 9:16 / tall mobile crops.
 - `lm-foreground-mobile`: simplified bottom foliage with reduced obstruction.
 - Optional compact panel-frame variants if 9-slice/CSS cannot preserve the concept cleanly.
@@ -170,7 +170,7 @@ On mobile, dynamic cards should stack as DOM UI around the tree rather than be r
 
 ## L. Cutout priority
 
-### P0 — required to recreate concept #3
+### P0 â€” required to recreate concept #3
 1. Scenic background plate or its major layers.
 2. Tree trunk/root layer.
 3. Rear, middle and front canopy layers.
@@ -179,9 +179,9 @@ On mobile, dynamic cards should stack as DOM UI around the tree rather than be r
 6. Giveaway panel decorative frame.
 7. Bottom three-step panel frame/icons.
 8. Logo maple leaf.
-9. 8–10 falling-leaf variants.
+9. 8â€“10 falling-leaf variants.
 
-### P1 — makes it feel alive
+### P1 â€” makes it feel alive
 10. Far cloud layer.
 11. Lake shimmer layer/mask.
 12. Hanging tree sign.
@@ -189,7 +189,7 @@ On mobile, dynamic cards should stack as DOM UI around the tree rather than be r
 14. Foreground foliage layers.
 15. Wind-swirl FX.
 
-### P2 — polish after desktop/mobile acceptance
+### P2 â€” polish after desktop/mobile acceptance
 16. Extra leaf silhouettes.
 17. Additional atmospheric motes.
 18. Optional skyline variant.
@@ -197,9 +197,9 @@ On mobile, dynamic cards should stack as DOM UI around the tree rather than be r
 ## Runtime weight targets
 
 Target budgets for the first visible desktop experience:
-- critical background + tree: ideally ≤ 1.5 MB compressed total;
-- UI/icon assets: ≤ 200 KB total;
-- ambient FX sprites: ≤ 150 KB total;
+- critical background + tree: ideally â‰¤ 1.5 MB compressed total;
+- UI/icon assets: â‰¤ 200 KB total;
+- ambient FX sprites: â‰¤ 150 KB total;
 - optional wildlife loaded after first paint;
 - AVIF/WebP preferred for scenic layers with PNG retained as source/master.
 
@@ -212,7 +212,7 @@ The layered recreation is accepted when a side-by-side comparison with concept #
 - large centred tree dominance;
 - clear left giveaway panel;
 - clear top-right impact/funds panel;
-- obvious `Enter free` and `Plant a leaf · $1` actions;
+- obvious `Enter free` and `Plant a leaf Â· $1` actions;
 - readable three-step story at the bottom;
 - generous whitespace around key text;
 - subtle motion that does not compete with purchasing, free entry, or impact information.
