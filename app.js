@@ -275,6 +275,15 @@ async function loadPublicData() {
         updateLeafCount(stats.leavesPlanted);
         document.getElementById("fundsRaised").textContent = money(stats.helpAllocatedCents);
         document.getElementById("impactDelivered").textContent = money(stats.helpDeliveredCents).replace(" CAD", "");
+        const legacyResponse = await fetch("/api/leaves", { headers: { Accept: "application/json" } });
+        if (legacyResponse.ok) {
+          const legacy = (await legacyResponse.json()).leaves || [];
+          hydrateCampaignLeaves(legacy.map((leaf, index) => ({
+            leaf_slot: index + 1, gross_cents: 100,
+            display_name: leaf.display_name, message: leaf.message,
+            sprite_variant: ((Number(leaf.id) * 7) % 12) + 1
+          })));
+        }
       }
     } catch { /* static prototype fallback */ }
   }
