@@ -3,70 +3,94 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#f4edda" />
+  <meta name="theme-color" content="#f8f1df" />
   <title>The Lucky Maple</title>
-  <meta name="description" content="Plant a permanent $1 leaf on The Lucky Maple. Canada-only weekly promotional giveaway. No purchase necessary." />
+  <meta name="description" content="Plant a $1 leaf on The Lucky Maple. 50¢ from every leaf directly helps neurodivergent Canadians. Canada-only weekly giveaway; no purchase necessary." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main class="app-shell">
     <header class="topbar">
-      <a class="brand" href="#" aria-label="The Lucky Maple home">
-        <span class="brand-leaf">🍁</span>
+      <a class="brand" href="#home" aria-label="The Lucky Maple home">
+        <span class="brand-leaf" aria-hidden="true">🍁</span>
         <span><b>The Lucky Maple</b><small>One ridiculous tree. Thousands of people.</small></span>
       </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a class="active" href="#home">Home</a>
+        <a href="#how">How It Works</a>
+        <a href="#impact">Impact</a>
+        <a href="#stories">Stories</a>
+        <a href="#winners">Past Winners</a>
+      </nav>
       <div class="top-actions">
         <button class="button ghost" data-open="free-entry">Enter free</button>
         <button class="button primary" data-open="plant">Plant a leaf · $1</button>
       </div>
     </header>
-    <section class="tree-card">
-      <div class="prize-banner">
-        <span class="eyebrow">THIS WEEK'S LEAF DROP</span>
-        <strong>$100 CAD</strong>
-        <span>One eligible Canadian entrant wins every week.</span>
-        <small>No purchase necessary · Buying a leaf does not improve your odds.</small>
-      </div>
 
-      <div id="treeViewport" class="tree-viewport" aria-label="Interactive Lucky Maple tree">
-        <svg id="treeStage" viewBox="0 0 1600 1200" role="img" aria-labelledby="treeTitle treeDesc">
-          <title id="treeTitle">The Lucky Maple interactive tree</title>
-          <desc id="treeDesc">Zoom and pan around the maple tree. Click leaves to see their owners or claim an available leaf.</desc>
-          <defs>
-            <filter id="softShadow"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity=".18"/></filter>
-            <symbol id="mapleLeaf" viewBox="-18 -20 36 42">
-              <path d="M0-19 4-9 11-13 9-5 17-2 10 4 14 11 5 9 3 20-3 20-5 9-14 11-10 4-17-2-9-5-11-13-4-9Z" />
-            </symbol>
-          </defs>
-          <ellipse cx="800" cy="1120" rx="440" ry="42" class="ground-shadow"/>
-          <path class="trunk" d="M710 1100 C735 920 730 760 790 620 C820 540 815 430 805 350 L875 350 C878 485 875 560 930 660 C990 770 985 930 1000 1100 Z"/>
-          <path class="branch" d="M820 700 C680 610 540 560 365 560"/><path class="branch" d="M860 630 C1040 520 1170 500 1300 535"/><path class="branch" d="M825 520 C690 430 600 355 500 310"/><path class="branch" d="M860 480 C1000 370 1090 300 1185 270"/>
+    <section class="hero" id="home">
+      <div class="scene" aria-hidden="true">
+        <img class="scene-bg" src="img/web/scene/background-autumn-lake.webp" alt="" />
+        <div class="tree-layer canopy canopy-back"><img src="img/web/tree/canopy-back.webp" alt="" /></div>
+        <div class="tree-layer canopy canopy-mid"><img src="img/web/tree/canopy-mid.webp" alt="" /></div>
+        <div class="tree-layer trunk"><img src="img/web/tree/tree-trunk.webp" alt="" /></div>
+        <div class="tree-layer canopy canopy-front"><img src="img/web/tree/canopy-front.webp" alt="" /></div>
+        <img class="scene-bird" src="img/web/critters/bird-chickadee.webp" alt="" />
+        <svg id="leafStage" class="leaf-stage" viewBox="0 0 1672 941" aria-hidden="true">
+          <defs><symbol id="mapleLeaf" viewBox="-18 -20 36 42"><path d="M0-19 4-9 11-13 9-5 17-2 10 4 14 11 5 9 3 20-3 20-5 9-14 11-10 4-17-2-9-5-11-13-4-9Z" /></symbol></defs>
           <g id="leafLayer"></g>
         </svg>
+        <div id="ambientLeaves" class="ambient-leaves"></div>
+        <img class="scene-foreground" src="img/web/scene/foreground-foliage.webp" alt="" />
       </div>
-      <div class="tree-tools" aria-label="Tree controls">
-        <button id="zoomIn" title="Zoom in">+</button>
-        <button id="zoomOut" title="Zoom out">−</button>
-        <button id="resetView" title="Reset view">⌂</button>
+      <section class="hero-copy" aria-labelledby="heroTitle">
+        <h1 id="heroTitle">Small leaf.<br><span>Big change.</span></h1>
+        <p>Plant a leaf for <b>$1</b>, and <b>50¢</b> directly helps neurodivergent Canadians. You’ll also help grow our tree and our community.</p>
+      </section>
+
+      <section class="giveaway-card" aria-label="This week's giveaway">
+        <span class="card-kicker">🎁 THIS WEEK’S GIVEAWAY</span>
+        <strong id="prizeAmount">$100 CAD</strong>
+        <p>One eligible Canadian entrant wins every week.</p>
+        <button class="button primary full" data-open="free-entry">Enter free →</button>
+        <small>No purchase necessary. Buying a leaf does not improve your odds.</small>
+      </section>
+
+      <aside class="impact-card" id="impact">
+        <div class="impact-title"><span>🍁</span><b>Funds Raised</b></div>
+        <strong id="fundsRaised">$0.00 CAD</strong>
+        <span class="impact-subtitle">for neurodivergent Canadians</span>
+        <div class="impact-grid">
+          <div><b id="impactLeaves">0</b><span>Leaves planted</span></div>
+          <div><b id="impactDelivered">$0</b><span>Direct help delivered</span></div>
+          <div><b id="impactPrize">$100</b><span>Weekly giveaway</span></div>
+        </div>
+        <small>Real people. Real support. A brighter Canada.</small>
+      </aside>
+      <div class="tree-counter" aria-live="polite">
+        <span class="counter-leaf">🍁</span>
+        <b id="leafCount">0</b>
+        <span>leaves planted</span>
+        <span class="counter-divider">›</span>
+        <small>Click any leaf to explore</small>
       </div>
 
-      <div class="tree-stats">
-        <span><b id="leafCount">0</b> leaves planted</span>
-        <span>•</span>
-        <span>Click any leaf to explore</span>
-      </div>
+      <section class="hero-steps" id="how" aria-label="How The Lucky Maple works">
+        <div><span class="step-icon">🍁</span><p><b>1. Plant a leaf.</b><small>Pick a leaf and put your name on it for $1.</small></p></div>
+        <div><span class="step-icon">❤</span><p><b>2. Support real impact.</b><small>50¢ from every leaf directly helps neurodivergent Canadians.</small></p></div>
+        <div><span class="step-icon">🏆</span><p><b>3. Get lucky.</b><small>Canadian residents can enter the weekly giveaway free.</small></p></div>
+      </section>
     </section>
 
-    <section class="simple-strip">
-      <div><b>Plant.</b><span>Pick a leaf and put your name on it for $1.</span></div>
-      <div><b>Stay.</b><span>Your leaf gets a permanent number and public page.</span></div>
-      <div><b>Get lucky.</b><span>Canada residents can enter the weekly giveaway free.</span></div>
+    <section class="below-fold" id="stories">
+      <div><span class="eyebrow">WHERE THE LEAVES WENT</span><h2>Direct help. Public impact.</h2></div>
+      <p>As assistance is delivered, this area will show real totals and recipient stories where people have chosen to share them. Receiving help is never conditional on publicity.</p>
     </section>
 
-    <footer>
+    <footer id="winners">
       <span>© The Lucky Maple</span>
       <nav><a href="rules.html">Official Rules</a><a href="#" data-open="free-entry">Free Entry</a><a href="#how">How it works</a></nav>
-      <small>Canada only giveaway. 18+. No purchase necessary. Skill-testing question required. Prize funded separately by The Lucky Maple and/or sponsors.</small>
+      <small>Canada-only giveaway. 18+. No purchase necessary. Skill-testing question required. Prize funded separately by The Lucky Maple and/or sponsors.</small>
     </footer>
   </main>
   <dialog id="leafDialog" class="modal">
@@ -79,24 +103,25 @@
     <span class="eyebrow">PLANT YOUR LEAF</span>
     <h2>One leaf. One dollar. Yours.</h2>
     <p>Choose a display name and a tiny message. Your leaf gets a permanent number on the tree.</p>
-    <label>Display name<input maxlength="28" placeholder="Big Dave" /></label>
-    <label>Leaf message<input maxlength="60" placeholder="I can't believe I bought this." /></label>
-    <label>Email for receipt & recovery<input type="email" placeholder="you@example.com" /></label>
+    <label>Display name<input id="plantName" maxlength="28" placeholder="Big Dave" /></label>
+    <label>Leaf message<input id="plantMessage" maxlength="60" placeholder="I can't believe I bought this." /></label>
+    <label>Email for receipt & recovery<input id="plantEmail" type="email" placeholder="you@example.com" /></label>
     <button class="button primary full" id="mockCheckout">Continue · $1 CAD</button>
-    <small>No account required. Concept checkout only — payments are not connected yet.</small>
+    <small>No account required. Payments are not connected in this prototype yet.</small>
   </dialog>
 
   <dialog id="freeEntryDialog" class="modal">
     <button class="close" data-close aria-label="Close">×</button>
     <span class="eyebrow">NO PURCHASE NECESSARY</span>
-    <h2>Enter this week's $100 giveaway.</h2>
-    <label>Name<input maxlength="60" placeholder="Your name" /></label>
-    <label>Email<input type="email" placeholder="you@example.com" /></label>
-    <label>Province / territory<select><option>Ontario</option><option>Alberta</option><option>British Columbia</option><option>Quebec</option><option>Other Canada</option></select></label>
-    <label class="check"><input type="checkbox" /> I am 18+ and agree to the Official Rules.</label>
-    <label class="check"><input type="checkbox" /> Email me future Leaf Drops and Lucky Maple news. <em>Optional.</em></label>
-    <button class="button primary full" id="mockEntry">Enter this week's draw</button>
+    <h2>Enter this week's giveaway.</h2>
+    <label>Name<input id="entryName" maxlength="60" placeholder="Your name" /></label>
+    <label>Email<input id="entryEmail" type="email" placeholder="you@example.com" /></label>
+    <label>Province / territory<select id="entryProvince"><option>Ontario</option><option>Alberta</option><option>British Columbia</option><option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option><option>Nova Scotia</option><option>New Brunswick</option><option>Newfoundland and Labrador</option><option>Prince Edward Island</option><option>Northwest Territories</option><option>Nunavut</option><option>Yukon</option></select></label>
+    <label class="check"><input id="entryRules" type="checkbox" /> I am 18+ and agree to the Official Rules.</label>
+    <label class="check"><input id="entryMarketing" type="checkbox" /> Email me future Leaf Drops and Lucky Maple news. <em>Optional.</em></label>
+    <button class="button primary full" id="submitEntry">Enter this week's draw</button>
     <small>Buying a leaf does not improve your odds. Skill-testing question required if selected.</small>
+    <p id="entryStatus" class="form-status" aria-live="polite"></p>
   </dialog>
 
   <script src="app.js"></script>

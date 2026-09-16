@@ -1,0 +1,152 @@
+{
+  "version": 1,
+  "assets": {
+    "scene/background-autumn-lake.webp": {
+      "source": "img/source/background-autumn-lake-master.png",
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "cropBox": [
+        0,
+        0,
+        1672,
+        941
+      ],
+      "outputSize": [
+        1672,
+        941
+      ],
+      "pivot": [
+        0.5,
+        0.5
+      ]
+    },
+    "tree/tree-trunk.webp": {
+      "source": "img/source/tree-trunk-master.png",
+      "sourceSize": [
+        1024,
+        1536
+      ],
+      "cropBox": [
+        17,
+        54,
+        1018,
+        1466
+      ],
+      "outputSize": [
+        1001,
+        1412
+      ],
+      "pivot": [
+        0.5,
+        1.0
+      ]
+    },
+    "tree/canopy-back.webp": {
+      "source": "img/source/canopy-back-master.png",
+      "sourceSize": [
+        1448,
+        1086
+      ],
+      "cropBox": [
+        17,
+        3,
+        1440,
+        1005
+      ],
+      "outputSize": [
+        1423,
+        1002
+      ],
+      "pivot": [
+        0.5,
+        0.85
+      ]
+    },
+    "tree/canopy-mid.webp": {
+      "source": "img/source/canopy-mid-master.png",
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "cropBox": [
+        5,
+        0,
+        1532,
+        997
+      ],
+      "outputSize": [
+        1527,
+        997
+      ],
+      "pivot": [
+        0.5,
+        0.85
+      ]
+    },
+    "tree/canopy-front.webp": {
+      "source": "img/source/canopy-front-master.png",
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "cropBox": [
+        2,
+        0,
+        1536,
+        938
+      ],
+      "outputSize": [
+        1534,
+        938
+      ],
+      "pivot": [
+        0.5,
+        0.85
+      ]
+    },
+    "critters/bird-chickadee.webp": {
+      "source": "img/source/bird-master.png",
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "cropBox": [
+        78,
+        5,
+        1528,
+        1024
+      ],
+      "outputSize": [
+        1450,
+        1019
+      ],
+      "pivot": [
+        0.5,
+        1.0
+      ]
+    },
+    "scene/foreground-foliage.webp": {
+      "source": "img/source/foreground-foliage-master.png",
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "cropBox": [
+        0,
+        4,
+        2172,
+        724
+      ],
+      "outputSize": [
+        2172,
+        720
+      ],
+      "pivot": [
+        0.5,
+        1.0
+      ]
+    }
+  }
+}
