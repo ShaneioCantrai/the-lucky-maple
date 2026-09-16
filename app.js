@@ -31,8 +31,8 @@ const canopyZones = [
 ];
 
 function makeLeafElement(leaf) {
-  const use = document.createElementNS(NS, "use");
-  use.setAttribute("href", "#mapleLeaf");
+  const use = document.createElementNS(NS, "image");
+  use.setAttribute("preserveAspectRatio", "xMidYMid meet");
   use.setAttribute("x", leaf.x - leaf.size / 2);
   use.setAttribute("y", leaf.y - leaf.size / 2);
   use.setAttribute("width", leaf.size);
@@ -47,6 +47,8 @@ function makeLeafElement(leaf) {
 function refreshLeafElement(leaf) {
   if (!leaf.element) return;
   const variant = leaf.claimed ? `claimed-${["a", "b", "c"][leaf.id % 3]}` : "available";
+  const spriteIndex = leaf.claimed ? ((leaf.id * 7) % 12) + 1 : 6;
+  leaf.element.setAttribute("href", `img/web/leaves/leaf-${String(spriteIndex).padStart(2, "0")}.webp`);
   leaf.element.setAttribute("class", `leaf ${variant}`);
   leaf.element.setAttribute("aria-label", leaf.claimed ? `Claimed leaf ${leaf.id}` : `Available leaf ${leaf.id}`);
 }
@@ -58,7 +60,7 @@ for (const [cx, cy, rx, ry, count] of canopyZones) {
     const radius = Math.sqrt(random());
     const leaf = {
       id: nextId++, x: cx + Math.cos(angle) * rx * radius, y: cy + Math.sin(angle) * ry * radius,
-      size: 16 + random() * 15, rotation: Math.round(random() * 80 - 40), claimed: random() < .22,
+      size: 22 + random() * 16, rotation: Math.round(random() * 80 - 40), claimed: random() < .22,
       owner: null, message: null, element: null
     };
     if (leaf.claimed) {

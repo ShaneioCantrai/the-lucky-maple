@@ -167,12 +167,10 @@ a { color: inherit; }
 .hero-steps b { display: block; font-size: 15px; }
 .hero-steps small { display: block; margin-top: 2px; color: #766351; font-size: 11px; line-height: 1.25; }
 
-.leaf { cursor: pointer; stroke: rgba(255,255,255,.48); stroke-width: .7; transform-box: fill-box; transform-origin: center; transition: opacity .16s ease, filter .16s ease; }
-.leaf.available { fill: #759257; opacity: .12; }
-.leaf.claimed-a { fill: #c54432; opacity: .5; }
-.leaf.claimed-b { fill: #e88435; opacity: .5; }
-.leaf.claimed-c { fill: #e0b339; opacity: .5; }
-.leaf:hover, .leaf:focus-visible { opacity: .95; filter: brightness(1.15) drop-shadow(0 2px 4px rgba(48,29,13,.45)); outline: none; }
+.leaf { cursor: pointer; pointer-events: bounding-box; transform-box: fill-box; transform-origin: center; transition: opacity .16s ease, filter .16s ease, transform .16s ease; }
+.leaf.available { opacity: .10; filter: saturate(.75); }
+.leaf.claimed-a, .leaf.claimed-b, .leaf.claimed-c { opacity: .78; }
+.leaf:hover, .leaf:focus-visible { opacity: 1; filter: brightness(1.12) saturate(1.1) drop-shadow(0 2px 4px rgba(48,29,13,.48)); outline: none; }
 
 .below-fold {
   max-width: 1180px; margin: 30px auto 8px; padding: 28px 30px; display: grid; grid-template-columns: .8fr 1.2fr; gap: 30px;
