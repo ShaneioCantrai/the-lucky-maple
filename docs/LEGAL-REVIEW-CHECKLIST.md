@@ -15,7 +15,15 @@ Status: implementation checklist, not a substitute for Canadian legal advice.
 
 ## Quebec / French
 
-Before actively offering contractual services, applications or promotional contests to Quebec residents, obtain advice on Charter of the French Language requirements and provide required French versions of the site, contracts/terms, application materials and contest rules. Do not treat an English-only legal stack as the completed Quebec compliance step.
+Implemented in the product:
+- Complete French public-site, application, account-recovery, contact and legal-page paths under `/fr/`.
+- French Application Terms / Applicant Privacy Notice are presented before the English versions in the application workflow.
+- Quebec applicants who choose English must expressly record that choice after French versions are available; language, French presentation, choice timestamp and accepted document versions are persisted.
+- French Official Rules are available before English rules; Quebec entrants using English must expressly choose English and the rules language is recorded with the entry.
+- Applicant verification and password-recovery email templates follow the account's preferred language.
+- Contribution records have language/version fields ready for the live payment workflow.
+
+Still required before treating Quebec compliance as final: Canadian/Quebec counsel review of the French text and workflow, final payment/receipt language handling when payments go live, and review of any other Quebec-specific consumer-law obligations that apply to MapleWish.
 
 ## Giveaway operations
 

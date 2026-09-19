@@ -195,6 +195,7 @@ app.get('/api/cases/:id', async (req, res, next) => {
         eligibility_confirmed,accuracy_confirmed,privacy_acknowledged,
         applicant_privacy_acknowledged_at,applicant_privacy_version,
         application_terms_accepted_at,application_terms_version,
+        contract_language,french_version_presented,english_language_choice_confirmed,language_choice_at,
         submitted_at,reviewed_at,updated_at,created_at,(photo_storage_key IS NOT NULL) AS has_photo
         FROM assistance_cases WHERE id=$1`, [req.params.id]),
       pool.query(`SELECT id,note_text,actor,created_at FROM assistance_case_notes

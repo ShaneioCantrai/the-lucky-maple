@@ -47,6 +47,7 @@ app.get('/reset-password.js', (_req, res) => res.sendFile(path.join(repoRoot, 'r
 app.get('/contact.js', (_req, res) => res.sendFile(path.join(repoRoot, 'contact.js')));
 app.get('/leaf-layout.js', (_req, res) => res.sendFile(path.join(repoRoot, 'leaf-layout.js')));
 app.get('/styles.css', (_req, res) => res.sendFile(path.join(repoRoot, 'styles.css')));
+app.use('/fr', express.static(path.join(repoRoot, 'fr'), { extensions: ['html'], index: 'index.html' }));
 app.use('/img/web', express.static(path.join(repoRoot, 'img', 'web'), { maxAge: '1h', immutable: false }));
 
 function identityHash(email) {
@@ -111,7 +112,7 @@ async function requireApplicant(req, res, next) {
   try {
     const token = parseCookies(req)[applicantCookie];
     if (!token) return res.status(401).json({ error: 'Sign in to continue.' });
-    const result = await pool.query(`SELECT s.id AS session_id,s.account_id,a.email,a.email_verified_at
+    const result = await pool.query(`SELECT s.id AS session_id,s.account_id,a.email,a.email_verified_at,a.preferred_language
       FROM applicant_sessions s JOIN applicant_accounts a ON a.id=s.account_id
       WHERE s.token_hash=$1 AND s.expires_at>now() LIMIT 1`, [sha256(token)]);
     if (!result.rows[0]) {
@@ -149,9 +150,9 @@ async function issueApplicantAuthToken(accountId, purpose, ttlMs) {
   return token;
 }
 
-async function sendApplicantVerification(accountId, email) {
+async function sendApplicantVerification(accountId, email, language = 'en-CA') {
   const token = await issueApplicantAuthToken(accountId, 'verify_email', 24 * 60 * 60 * 1000);
-  await sendVerificationEmail(email, token);
+  await sendVerificationEmail(email, token, language);
 }
 
 const photoUpload = multer({
@@ -248,17 +249,27 @@ app.post('/api/contest/entries', async (req, res, next) => {
        ORDER BY opens_at DESC LIMIT 1`);
     if (!contest.rows[0]) return res.status(409).json({ error: 'No giveaway is currently open.' });
     const week = contest.rows[0];
+    const isQuebec = String(entry.province).trim().toLowerCase() === 'quebec' ||
+      String(entry.province).trim().toLowerCase() === 'québec';
+    if (isQuebec && !entry.frenchRulesPresented) {
+      return res.status(400).json({ error: 'The French Official Rules must be made available before entry.' });
+    }
+    if (isQuebec && entry.rulesLanguage === 'en-CA' && !entry.englishLanguageChoiceConfirmed) {
+      return res.status(400).json({ error: 'Please expressly choose English after the French Official Rules are presented.' });
+    }
     const hash = identityHash(entry.email);
     const result = await pool.query(
       `INSERT INTO contest_entries
        (contest_week_id, entry_method, entrant_name, entrant_email,
         entrant_identity_hash, province, country, age_confirmed, rules_version,
+        rules_language, french_rules_presented, english_language_choice_confirmed,
         marketing_consent, marketing_consent_at)
-       VALUES ($1,'free',$2,$3,$4,$5,'CA',true,$6,$7,CASE WHEN $7 THEN now() END)
+       VALUES ($1,'free',$2,$3,$4,$5,'CA',true,$6,$7,$8,$9,$10,CASE WHEN $10 THEN now() END)
        ON CONFLICT (contest_week_id, entrant_identity_hash) DO NOTHING
        RETURNING id`,
       [week.id, entry.name, entry.email.toLowerCase(), hash, entry.province,
-       week.rules_version, entry.marketingConsent]);
+       week.rules_version, entry.rulesLanguage, entry.frenchRulesPresented,
+       entry.englishLanguageChoiceConfirmed, entry.marketingConsent]);
     res.status(result.rows[0] ? 201 : 200).json({ entered: true, alreadyEntered: !result.rows[0] });
   } catch (error) { next(error); }
 });
@@ -299,6 +310,7 @@ async function applicantApplication(accountId) {
     applicant_privacy_version,
     (application_terms_accepted_at IS NOT NULL) AS application_terms_accepted,
     application_terms_version,
+    contract_language,french_version_presented,english_language_choice_confirmed,language_choice_at,
     submitted_at,updated_at,created_at,
     (photo_storage_key IS NOT NULL) AS has_photo
     FROM assistance_cases WHERE account_id=$1
@@ -324,9 +336,9 @@ app.post('/api/help/auth/register', applicantAuthLimiter, requireSameOrigin, asy
     let account;
     try {
       const result = await pool.query(`INSERT INTO applicant_accounts
-        (email,password_salt,password_hash,last_login_at,email_verified_at)
-        VALUES ($1,$2,$3,now(),NULL) RETURNING id,email,email_verified_at`,
-        [credentials.email.toLowerCase(), record.salt, record.hash]);
+        (email,password_salt,password_hash,last_login_at,email_verified_at,preferred_language)
+        VALUES ($1,$2,$3,now(),NULL,$4) RETURNING id,email,email_verified_at,preferred_language`,
+        [credentials.email.toLowerCase(), record.salt, record.hash, credentials.language]);
       account = result.rows[0];
     } catch (error) {
       if (error.code === '23505') return res.status(409).json({ error: 'An account already exists for that email.' });
@@ -339,7 +351,7 @@ app.post('/api/help/auth/register', applicantAuthLimiter, requireSameOrigin, asy
     let verificationEmailSent = false;
     if (emailDeliveryConfigured()) {
       try {
-        await sendApplicantVerification(account.id, account.email);
+        await sendApplicantVerification(account.id, account.email, account.preferred_language);
         verificationEmailSent = true;
       } catch (error) {
         console.error('Verification email failed:', error.message);
@@ -361,7 +373,7 @@ app.post('/api/help/auth/register', applicantAuthLimiter, requireSameOrigin, asy
 app.post('/api/help/auth/login', applicantAuthLimiter, requireSameOrigin, async (req, res, next) => {
   try {
     const credentials = applicantCredentialsSchema.parse(req.body);
-    const result = await pool.query(`SELECT id,email,password_salt,password_hash,email_verified_at
+    const result = await pool.query(`SELECT id,email,password_salt,password_hash,email_verified_at,preferred_language
       FROM applicant_accounts WHERE lower(email)=lower($1) LIMIT 1`, [credentials.email]);
     const account = result.rows[0];
     if (!account) {
@@ -372,7 +384,8 @@ app.post('/api/help/auth/login', applicantAuthLimiter, requireSameOrigin, async 
       return res.status(401).json({ error: 'Email or password is incorrect.' });
     }
     await pool.query('DELETE FROM applicant_sessions WHERE expires_at<=now()');
-    await pool.query('UPDATE applicant_accounts SET last_login_at=now() WHERE id=$1', [account.id]);
+    await pool.query('UPDATE applicant_accounts SET last_login_at=now(),preferred_language=$2 WHERE id=$1', [account.id, credentials.language]);
+    account.preferred_language = credentials.language;
     await createApplicantSession(account.id, res);
     res.json({
       signedIn: true,
@@ -397,23 +410,30 @@ app.post('/api/help/auth/logout', requireSameOrigin, async (req, res, next) => {
 app.get('/api/help/auth/verify-email', applicantEmailLimiter, async (req, res, next) => {
   try {
     const token = String(req.query.token || '');
-    if (token.length < 32 || token.length > 200) return res.redirect(303, '/apply.html?verified=0');
-    const verified = await withTransaction(async client => {
-      const result = await client.query(`SELECT t.id,t.account_id,t.used_at,t.expires_at,a.email_verified_at
+    const requestedLanguage = req.query.lang === 'fr-CA' ? 'fr-CA' : 'en-CA';
+    if (token.length < 32 || token.length > 200) {
+      return res.redirect(303, requestedLanguage === 'fr-CA' ? '/fr/apply.html?verified=0' : '/apply.html?verified=0');
+    }
+    const outcome = await withTransaction(async client => {
+      const result = await client.query(`SELECT t.id,t.account_id,t.used_at,t.expires_at,
+        a.email_verified_at,a.preferred_language
         FROM applicant_auth_tokens t JOIN applicant_accounts a ON a.id=t.account_id
         WHERE t.token_hash=$1 AND t.purpose='verify_email' FOR UPDATE`, [sha256(token)]);
       const row = result.rows[0];
-      if (!row) return false;
-      if (row.email_verified_at) return true;
-      if (row.used_at || new Date(row.expires_at).getTime() <= Date.now()) return false;
+      if (!row) return { verified: false, language: 'en-CA' };
+      if (row.email_verified_at) return { verified: true, language: row.preferred_language || 'en-CA' };
+      if (row.used_at || new Date(row.expires_at).getTime() <= Date.now()) {
+        return { verified: false, language: row.preferred_language || 'en-CA' };
+      }
       await client.query('UPDATE applicant_accounts SET email_verified_at=COALESCE(email_verified_at,now()) WHERE id=$1', [row.account_id]);
       await client.query(`UPDATE applicant_auth_tokens SET used_at=COALESCE(used_at,now())
         WHERE account_id=$1 AND purpose='verify_email' AND used_at IS NULL`, [row.account_id]);
       await client.query(`INSERT INTO audit_log(actor_type,actor_id,event_type,entity_type,entity_id)
         VALUES ('applicant',$1,'email_verified','applicant_account',$1)`, [row.account_id]);
-      return true;
+      return { verified: true, language: row.preferred_language || 'en-CA' };
     });
-    return res.redirect(303, verified ? '/apply.html?verified=1' : '/apply.html?verified=0');
+    const base = outcome.language === 'fr-CA' ? '/fr/apply.html' : '/apply.html';
+    return res.redirect(303, `${base}?verified=${outcome.verified ? '1' : '0'}`);
   } catch (error) { next(error); }
 });
 
@@ -421,7 +441,7 @@ app.post('/api/help/auth/resend-verification', applicantEmailLimiter, requireApp
   try {
     if (req.applicant.email_verified_at) return res.json({ sent: false, alreadyVerified: true });
     if (!emailDeliveryConfigured()) return res.status(503).json({ error: 'Verification email delivery is not configured yet.' });
-    await sendApplicantVerification(req.applicant.account_id, req.applicant.email);
+    await sendApplicantVerification(req.applicant.account_id, req.applicant.email, req.applicant.preferred_language || 'en-CA');
     await pool.query(`INSERT INTO audit_log(actor_type,actor_id,event_type,entity_type,entity_id)
       VALUES ('applicant',$1,'verification_email_resent','applicant_account',$1)`, [req.applicant.account_id]);
     res.json({ sent: true });
@@ -432,12 +452,12 @@ app.post('/api/help/auth/forgot-password', applicantEmailLimiter, requireSameOri
   try {
     if (!emailDeliveryConfigured()) return res.status(503).json({ error: 'Password recovery email delivery is not configured yet.' });
     const request = applicantEmailSchema.parse(req.body);
-    const result = await pool.query('SELECT id,email FROM applicant_accounts WHERE lower(email)=lower($1) LIMIT 1', [request.email]);
+    const result = await pool.query('SELECT id,email,preferred_language FROM applicant_accounts WHERE lower(email)=lower($1) LIMIT 1', [request.email]);
     const account = result.rows[0];
     if (account) {
       const token = await issueApplicantAuthToken(account.id, 'password_reset', 60 * 60 * 1000);
       try {
-        await sendPasswordResetEmail(account.email, token);
+        await sendPasswordResetEmail(account.email, token, account.preferred_language || 'en-CA');
       } catch (error) {
         console.error('Password reset email failed:', error.message);
       }
@@ -451,7 +471,7 @@ app.post('/api/help/auth/reset-password', applicantEmailLimiter, requireSameOrig
     const request = passwordResetSchema.parse(req.body);
     const record = await makePasswordRecord(request.password);
     const account = await withTransaction(async client => {
-      const result = await client.query(`SELECT t.id,t.account_id,a.email
+      const result = await client.query(`SELECT t.id,t.account_id,a.email,a.preferred_language
         FROM applicant_auth_tokens t JOIN applicant_accounts a ON a.id=t.account_id
         WHERE t.token_hash=$1 AND t.purpose='password_reset' AND t.used_at IS NULL
           AND t.expires_at>now() FOR UPDATE`, [sha256(request.token)]);
@@ -468,9 +488,19 @@ app.post('/api/help/auth/reset-password', applicantEmailLimiter, requireSameOrig
     });
     if (!account) return res.status(400).json({ error: 'This reset link is invalid or has expired.' });
     if (emailDeliveryConfigured()) {
-      sendPasswordChangedEmail(account.email).catch(error => console.error('Password-change email failed:', error.message));
+      sendPasswordChangedEmail(account.email, account.preferred_language || 'en-CA').catch(error => console.error('Password-change email failed:', error.message));
     }
     res.json({ reset: true });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/help/auth/language', requireApplicant, requireSameOrigin, async (req, res, next) => {
+  try {
+    const language = req.body?.language;
+    if (!['en-CA','fr-CA'].includes(language)) return res.status(400).json({ error: 'Invalid language.' });
+    await pool.query('UPDATE applicant_accounts SET preferred_language=$2 WHERE id=$1',
+      [req.applicant.account_id, language]);
+    res.json({ language });
   } catch (error) { next(error); }
 });
 
@@ -479,6 +509,7 @@ app.get('/api/help/me', requireApplicant, async (req, res, next) => {
     res.json({
       email: req.applicant.email,
       emailVerified: Boolean(req.applicant.email_verified_at),
+      preferredLanguage: req.applicant.preferred_language || 'en-CA',
       emailDeliveryAvailable: emailDeliveryConfigured(),
       verificationRequired: requireEmailVerification,
       applicationsOpen: applicationsOpen(),
@@ -502,7 +533,8 @@ app.put('/api/help/application', requireApplicant, requireSameOrigin, async (req
       item.requestedCents || null, item.privateStory || null, item.publicStoryDraft || null,
       item.publicIdentityPreference, item.publicAlias || null, item.openToPublicStory,
       item.eligibilityConfirmed, item.accuracyConfirmed, item.privacyAcknowledged,
-      req.applicant.account_id,
+      req.applicant.account_id, item.contractLanguage, item.frenchVersionPresented,
+      item.englishLanguageChoiceConfirmed,
     ];
 
     let caseId;
@@ -512,27 +544,36 @@ app.put('/api/help/application', requireApplicant, requireSameOrigin, async (req
         request_category=$7,request_summary=$8,requested_cents=$9,private_story=$10,
         public_story_draft=$11,public_identity_preference=$12,public_alias=$13,
         open_to_public_story=$14,eligibility_confirmed=$15,accuracy_confirmed=$16,
-        privacy_acknowledged=(privacy_acknowledged OR $17),updated_at=now()
-        WHERE id=$18 RETURNING id`, [...values.slice(0,17), existing.id]);
+        privacy_acknowledged=(privacy_acknowledged OR $17),account_id=$18,
+        contract_language=$19,french_version_presented=(french_version_presented OR $20),
+        english_language_choice_confirmed=(english_language_choice_confirmed OR $21),
+        language_choice_at=CASE WHEN contract_language IS DISTINCT FROM $19 OR language_choice_at IS NULL THEN now() ELSE language_choice_at END,
+        updated_at=now()
+        WHERE id=$22 RETURNING id`, [...values, existing.id]);
       caseId = result.rows[0].id;
     } else {
       const result = await pool.query(`INSERT INTO assistance_cases
         (status,applicant_name,applicant_email,province,city,preferred_contact,phone,
          request_category,request_summary,requested_cents,private_story,public_story_draft,
          public_identity_preference,public_alias,open_to_public_story,eligibility_confirmed,
-         accuracy_confirmed,privacy_acknowledged,account_id)
-        VALUES ('draft',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+         accuracy_confirmed,privacy_acknowledged,account_id,contract_language,
+         french_version_presented,english_language_choice_confirmed,language_choice_at)
+        VALUES ('draft',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,now())
         RETURNING id`, values);
       caseId = result.rows[0].id;
     }
 
+    const privacyVersion = item.contractLanguage === 'fr-CA' ? 'applicant-privacy-fr-2026-09-19' : applicantPrivacyVersion;
+    const termsVersion = item.contractLanguage === 'fr-CA' ? 'application-terms-fr-2026-09-19' : applicationTermsVersion;
+    await pool.query('UPDATE applicant_accounts SET preferred_language=$2 WHERE id=$1',
+      [req.applicant.account_id, item.contractLanguage]);
     if (item.privacyAcknowledged || item.applicationTermsAccepted) {
       await pool.query(`UPDATE assistance_cases SET
         applicant_privacy_acknowledged_at=CASE WHEN $2 THEN now() ELSE applicant_privacy_acknowledged_at END,
         applicant_privacy_version=CASE WHEN $2 THEN $3 ELSE applicant_privacy_version END,
         application_terms_accepted_at=CASE WHEN $4 THEN now() ELSE application_terms_accepted_at END,
         application_terms_version=CASE WHEN $4 THEN $5 ELSE application_terms_version END
-        WHERE id=$1`, [caseId, item.privacyAcknowledged, applicantPrivacyVersion, item.applicationTermsAccepted, applicationTermsVersion]);
+        WHERE id=$1`, [caseId, item.privacyAcknowledged, privacyVersion, item.applicationTermsAccepted, termsVersion]);
     }
     res.json({ saved: true, application: await applicantApplication(req.applicant.account_id) });
   } catch (error) { next(error); }
@@ -548,6 +589,10 @@ app.post('/api/help/application/submit', requireApplicant, requireSameOrigin, as
     if (!['draft','submitted','need_more_info'].includes(current.status)) {
       return res.status(409).json({ error: 'This application is already in review.' });
     }
+    const currentPrivacyVersion = current.contract_language === 'fr-CA'
+      ? 'applicant-privacy-fr-2026-09-19' : applicantPrivacyVersion;
+    const currentTermsVersion = current.contract_language === 'fr-CA'
+      ? 'application-terms-fr-2026-09-19' : applicationTermsVersion;
     const complete = helpApplicationSchema.parse({
       name: current.applicant_name || '',
       province: current.province || '',
@@ -564,14 +609,25 @@ app.post('/api/help/application/submit', requireApplicant, requireSameOrigin, as
       openToPublicStory: Boolean(current.open_to_public_story),
       eligibilityConfirmed: Boolean(current.eligibility_confirmed),
       accuracyConfirmed: Boolean(current.accuracy_confirmed),
-      privacyAcknowledged: Boolean(current.applicant_privacy_accepted && current.applicant_privacy_version === applicantPrivacyVersion),
-      applicationTermsAccepted: Boolean(current.application_terms_accepted && current.application_terms_version === applicationTermsVersion),
+      privacyAcknowledged: Boolean(current.applicant_privacy_accepted && current.applicant_privacy_version === currentPrivacyVersion),
+      applicationTermsAccepted: Boolean(current.application_terms_accepted && current.application_terms_version === currentTermsVersion),
+      contractLanguage: current.contract_language || 'en-CA',
+      frenchVersionPresented: Boolean(current.french_version_presented),
+      englishLanguageChoiceConfirmed: Boolean(current.english_language_choice_confirmed),
     });
     if ((complete.preferredContact === 'phone' || complete.preferredContact === 'either') && complete.phone.length < 7) {
       return res.status(400).json({ error: 'Add a phone number for the contact method you selected.' });
     }
     if (complete.publicIdentityPreference === 'pseudonym' && complete.publicAlias.length < 2) {
       return res.status(400).json({ error: 'Add the pseudonym you would want us to use.' });
+    }
+    const isQuebecApplicant = String(complete.province).trim().toLowerCase() === 'quebec' ||
+      String(complete.province).trim().toLowerCase() === 'québec';
+    if (isQuebecApplicant && !complete.frenchVersionPresented) {
+      return res.status(400).json({ error: 'The French Application Terms and Applicant Privacy Notice must be presented before submission.' });
+    }
+    if (isQuebecApplicant && complete.contractLanguage === 'en-CA' && !complete.englishLanguageChoiceConfirmed) {
+      return res.status(400).json({ error: 'Please expressly choose to continue in English after the French versions are presented.' });
     }
     if (!complete.eligibilityConfirmed || !complete.accuracyConfirmed ||
         !complete.privacyAcknowledged || !complete.applicationTermsAccepted) {

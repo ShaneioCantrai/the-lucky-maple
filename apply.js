@@ -4,6 +4,8 @@ const applicationPanel = $('applicationPanel');
 const applicationForm = $('applicationForm');
 const authStatus = $('authStatus');
 const applicationStatus = $('applicationStatus');
+const IS_FR = document.documentElement.lang.toLowerCase().startsWith('fr');
+const tr = (en, fr) => IS_FR ? fr : en;
 let currentApplication = null;
 let currentApplicantState = null;
 
@@ -22,6 +24,28 @@ async function api(path, options = {}) {
   return data;
 }
 
+function errorMessage(error) {
+  const message = String(error?.message || '');
+  if (!IS_FR) return message;
+  const map = {
+    'Sign in to continue.': 'Connectez-vous pour continuer.',
+    'Your session has expired. Please sign in again.': 'Votre session a expiré. Veuillez vous reconnecter.',
+    'Applications are not open yet.': 'Les demandes ne sont pas encore ouvertes.',
+    'Email verification is temporarily unavailable.': 'La vérification du courriel est temporairement indisponible.',
+    'An account already exists for that email.': 'Un compte existe déjà pour ce courriel.',
+    'Email or password is incorrect.': 'Le courriel ou le mot de passe est incorrect.',
+    'Verification email delivery is not configured yet.': 'L’envoi du courriel de vérification n’est pas encore configuré.',
+    'Verify your email before submitting your application.': 'Vérifiez votre courriel avant de soumettre votre demande.',
+    'Add a phone number for the contact method you selected.': 'Ajoutez un numéro de téléphone pour le moyen de contact choisi.',
+    'Add the pseudonym you would want us to use.': 'Ajoutez le pseudonyme que vous souhaitez que nous utilisions.',
+    'Please complete the required confirmations before submitting.': 'Veuillez remplir les confirmations requises avant de soumettre.',
+    'This application is being reviewed and cannot be edited right now.': 'Cette demande est en cours d’examen et ne peut pas être modifiée pour le moment.',
+    'This application is already in review.': 'Cette demande est déjà en cours d’examen.',
+    'Save your application before submitting it.': 'Enregistrez votre demande avant de la soumettre.',
+  };
+  return map[message] || message;
+}
+
 function setStatus(node, message, kind = '') {
   node.textContent = message || '';
   node.dataset.kind = kind;
@@ -37,7 +61,7 @@ function showAuth(tab = 'register') {
 }
 
 function statusCopy(status) {
-  return ({
+  const en = {
     draft: ['Draft saved', 'Your application is private and has not been submitted yet.'],
     submitted: ['Submitted', 'Your application is in the MapleWish review queue. You can still make corrections until review begins.'],
     reviewing: ['In review', 'The MapleWish team is reviewing your application.'],
@@ -49,7 +73,21 @@ function statusCopy(status) {
     declined: ['Closed', 'This application was not selected for assistance.'],
     paid: ['Help delivered', 'Assistance for this case has been delivered.'],
     closed: ['Closed', 'This application is closed.'],
-  })[status] || ['Application', status || ''];
+  };
+  const fr = {
+    draft: ['Brouillon enregistré', 'Votre demande est privée et n’a pas encore été soumise.'],
+    submitted: ['Soumise', 'Votre demande est dans la file d’examen MapleWish. Vous pouvez encore la corriger jusqu’au début de l’examen.'],
+    reviewing: ['En cours d’examen', 'L’équipe MapleWish examine votre demande.'],
+    need_more_info: ['Renseignements supplémentaires demandés', 'Veuillez mettre à jour les renseignements demandés, enregistrer, puis soumettre de nouveau.'],
+    shortlisted: ['Présélectionnée', 'Votre demande est considérée pour un prochain souhait.'],
+    approved: ['Approuvée', 'L’équipe prépare les prochaines étapes avec vous en privé.'],
+    published: ['Souhait publié', 'Votre souhait public approuvé est en ligne.'],
+    funded: ['Financé', 'Ce souhait MapleWish a été financé.'],
+    declined: ['Fermée', 'Cette demande n’a pas été retenue pour une aide.'],
+    paid: ['Aide versée', 'L’aide pour ce dossier a été versée.'],
+    closed: ['Fermée', 'Cette demande est fermée.'],
+  };
+  return (IS_FR ? fr : en)[status] || [tr('Application','Demande'), status || ''];
 }
 function renderState(application) {
   currentApplication = application || null;
@@ -79,11 +117,23 @@ function renderPhoto(hasPhoto) {
   const preview = $('photoPreview');
   $('removePhotoButton').classList.toggle('hidden', !hasPhoto);
   if (!hasPhoto) {
-    preview.innerHTML = '<span>📷</span><small>No photo uploaded</small>';
+    preview.innerHTML = `<span>📷</span><small>${tr('No photo uploaded','Aucune photo téléversée')}</small>`;
     return;
   }
-  preview.innerHTML = `<img src="/api/help/application/photo?v=${Date.now()}" alt="Your private application photo" />`;
+  preview.innerHTML = `<img src="/api/help/application/photo?v=${Date.now()}" alt="${tr('Your private application photo','Votre photo privée de demande')}" />`;
 }
+function isQuebecProvince(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'quebec' || normalized === 'québec';
+}
+
+function updateLanguageChoiceUI() {
+  const province = applicationForm.elements.province?.value;
+  const row = $('englishLanguageChoiceRow');
+  if (!row) return;
+  row.classList.toggle('hidden', IS_FR || !isQuebecProvince(province));
+}
+
 function setFormValue(name, value) {
   const field = applicationForm.elements[name];
   if (!field) return;
@@ -110,6 +160,8 @@ function fillForm(application) {
   setFormValue('accuracyConfirmed', application.accuracy_confirmed);
   setFormValue('privacyAcknowledged', application.applicant_privacy_accepted || application.privacy_acknowledged);
   setFormValue('applicationTermsAccepted', application.application_terms_accepted);
+  setFormValue('englishLanguageChoiceConfirmed', application.english_language_choice_confirmed);
+  updateLanguageChoiceUI();
 }
 function payloadFromForm() {
   const form = new FormData(applicationForm);
@@ -131,6 +183,9 @@ function payloadFromForm() {
     accuracyConfirmed: form.get('accuracyConfirmed') === 'on',
     privacyAcknowledged: form.get('privacyAcknowledged') === 'on',
     applicationTermsAccepted: form.get('applicationTermsAccepted') === 'on',
+    contractLanguage: IS_FR ? 'fr-CA' : 'en-CA',
+    frenchVersionPresented: true,
+    englishLanguageChoiceConfirmed: IS_FR ? false : form.get('englishLanguageChoiceConfirmed') === 'on',
   };
 }
 function renderVerification(data) {
@@ -148,9 +203,9 @@ function renderVerification(data) {
   resend.classList.toggle('hidden', !data.emailDeliveryAvailable);
   $('verificationCopy').textContent = data.emailDeliveryAvailable
     ? (data.verificationRequired
-      ? 'Check your inbox. Email verification is required before you can submit.'
-      : 'Check your inbox for a verification link to secure your account.')
-    : 'Email verification is required, but delivery is temporarily unavailable.';
+      ? tr('Check your inbox. Email verification is required before you can submit.','Consultez votre boîte de réception. La vérification de votre courriel est requise avant de soumettre.')
+      : tr('Check your inbox for a verification link to secure your account.','Consultez votre boîte de réception pour le lien de vérification qui sécurise votre compte.'))
+    : tr('Email verification is required, but delivery is temporarily unavailable.','La vérification du courriel est requise, mais l’envoi est temporairement indisponible.');
 }
 
 async function showApplicant(data) {
@@ -167,15 +222,23 @@ async function loadSession() {
   const verificationResult = new URL(location.href).searchParams.get('verified');
   try {
     const data = await api('/api/help/me');
+    const desiredLanguage = IS_FR ? 'fr-CA' : 'en-CA';
+    if (data.preferredLanguage !== desiredLanguage) {
+      await api('/api/help/auth/language', {
+        method: 'POST',
+        body: JSON.stringify({ language: desiredLanguage }),
+      });
+      data.preferredLanguage = desiredLanguage;
+    }
     await showApplicant(data);
-    if (verificationResult === '1') setStatus(applicationStatus, 'Email verified. Thank you.', 'success');
-    else if (verificationResult === '0') setStatus(applicationStatus, 'That verification link is invalid or has expired.', 'error');
-    if (verificationResult) history.replaceState({}, '', '/apply.html');
+    if (verificationResult === '1') setStatus(applicationStatus, tr('Email verified. Thank you.','Courriel vérifié. Merci.'), 'success');
+    else if (verificationResult === '0') setStatus(applicationStatus, tr('That verification link is invalid or has expired.','Ce lien de vérification est invalide ou expiré.'), 'error');
+    if (verificationResult) history.replaceState({}, '', IS_FR ? '/fr/apply.html' : '/apply.html');
   } catch (error) {
     if (error.status === 401) showAuth('register');
     else {
       showAuth('register');
-      setStatus(authStatus, error.message, 'error');
+      setStatus(authStatus, errorMessage(error), 'error');
     }
   }
 }
@@ -189,48 +252,48 @@ document.querySelectorAll('[data-auth-tab]').forEach(button => {
 $('registerForm').addEventListener('submit', async event => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
-  setStatus(authStatus, 'Creating your private account…');
+  setStatus(authStatus, tr('Creating your private account…','Création de votre compte privé…'));
   try {
     const data = await api('/api/help/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
+      body: JSON.stringify({ email: form.get('email'), password: form.get('password'), language: IS_FR ? 'fr-CA' : 'en-CA' }),
     });
     event.currentTarget.reset();
     await showApplicant(data);
     if (data.verificationEmailSent) {
-      setStatus(applicationStatus, 'Account created. We sent a verification link to your email.', 'success');
+      setStatus(applicationStatus, tr('Account created. We sent a verification link to your email.','Compte créé. Nous avons envoyé un lien de vérification à votre courriel.'), 'success');
     }
-  } catch (error) { setStatus(authStatus, error.message, 'error'); }
+  } catch (error) { setStatus(authStatus, errorMessage(error), 'error'); }
 });
 
 $('loginForm').addEventListener('submit', async event => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
-  setStatus(authStatus, 'Signing in…');
+  setStatus(authStatus, tr('Signing in…','Connexion…'));
   try {
     const data = await api('/api/help/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
+      body: JSON.stringify({ email: form.get('email'), password: form.get('password'), language: IS_FR ? 'fr-CA' : 'en-CA' }),
     });
     event.currentTarget.reset();
     await showApplicant(data);
-  } catch (error) { setStatus(authStatus, error.message, 'error'); }
+  } catch (error) { setStatus(authStatus, errorMessage(error), 'error'); }
 });
 $('resendVerificationButton').addEventListener('click', async () => {
   const button = $('resendVerificationButton');
   button.disabled = true;
-  $('verificationCopy').textContent = 'Sending a fresh verification link…';
+  $('verificationCopy').textContent = tr('Sending a fresh verification link…','Envoi d’un nouveau lien de vérification…');
   try {
     const data = await api('/api/help/auth/resend-verification', { method: 'POST' });
     if (data.alreadyVerified) {
       currentApplicantState.emailVerified = true;
       renderVerification(currentApplicantState);
-      setStatus(applicationStatus, 'Your email is already verified.', 'success');
+      setStatus(applicationStatus, tr('Your email is already verified.','Votre courriel est déjà vérifié.'), 'success');
     } else {
-      $('verificationCopy').textContent = 'Verification email sent. The link expires in 24 hours.';
+      $('verificationCopy').textContent = tr('Verification email sent. The link expires in 24 hours.','Courriel de vérification envoyé. Le lien expire dans 24 heures.');
     }
   } catch (error) {
-    $('verificationCopy').textContent = error.message;
+    $('verificationCopy').textContent = errorMessage(error);
   } finally {
     button.disabled = false;
   }
@@ -248,7 +311,7 @@ $('logoutButton').addEventListener('click', async () => {
 applicationForm.addEventListener('submit', async event => {
   event.preventDefault();
   const action = event.submitter?.dataset.action || 'save';
-  setStatus(applicationStatus, action === 'submit' ? 'Saving and submitting…' : 'Saving your private draft…');
+  setStatus(applicationStatus, action === 'submit' ? tr('Saving and submitting…','Enregistrement et soumission…') : tr('Saving your private draft…','Enregistrement de votre brouillon privé…'));
   try {
     const saved = await api('/api/help/application', {
       method: 'PUT',
@@ -258,44 +321,47 @@ applicationForm.addEventListener('submit', async event => {
     if (action === 'submit') {
       const submitted = await api('/api/help/application/submit', { method: 'POST' });
       currentApplication = submitted.application;
-      setStatus(applicationStatus, 'Application submitted. You can return here to check its status.', 'success');
+      setStatus(applicationStatus, tr('Application submitted. You can return here to check its status.','Demande soumise. Vous pouvez revenir ici pour vérifier son état.'), 'success');
     } else {
-      setStatus(applicationStatus, 'Draft saved privately.', 'success');
+      setStatus(applicationStatus, tr('Draft saved privately.','Brouillon enregistré en privé.'), 'success');
     }
     renderState(currentApplication);
-  } catch (error) { setStatus(applicationStatus, error.message, 'error'); }
+  } catch (error) { setStatus(applicationStatus, errorMessage(error), 'error'); }
 });
 $('uploadPhotoButton').addEventListener('click', async () => {
   const file = $('photoInput').files?.[0];
   if (!currentApplication) {
-    setStatus(applicationStatus, 'Save your draft first, then upload the private photo.', 'error');
+    setStatus(applicationStatus, tr('Save your draft first, then upload the private photo.','Enregistrez d’abord votre brouillon, puis téléversez la photo privée.'), 'error');
     return;
   }
   if (!file) {
-    setStatus(applicationStatus, 'Choose an image first.', 'error');
+    setStatus(applicationStatus, tr('Choose an image first.','Choisissez d’abord une image.'), 'error');
     return;
   }
   const body = new FormData();
   body.append('photo', file);
-  setStatus(applicationStatus, 'Processing and privately storing your photo…');
+  setStatus(applicationStatus, tr('Processing and privately storing your photo…','Traitement et stockage privé de votre photo…'));
   try {
     const data = await api('/api/help/application/photo', { method: 'POST', body });
     currentApplication = data.application;
     $('photoInput').value = '';
     renderPhoto(true);
-    setStatus(applicationStatus, 'Private photo uploaded. Image metadata was removed.', 'success');
-  } catch (error) { setStatus(applicationStatus, error.message, 'error'); }
+    setStatus(applicationStatus, tr('Private photo uploaded. Image metadata was removed.','Photo privée téléversée. Les métadonnées de l’image ont été supprimées.'), 'success');
+  } catch (error) { setStatus(applicationStatus, errorMessage(error), 'error'); }
 });
+
+applicationForm.elements.province?.addEventListener('change', updateLanguageChoiceUI);
+updateLanguageChoiceUI();
 
 $('removePhotoButton').addEventListener('click', async () => {
   if (!currentApplication?.has_photo) return;
-  setStatus(applicationStatus, 'Removing photo…');
+  setStatus(applicationStatus, tr('Removing photo…','Suppression de la photo…'));
   try {
     await api('/api/help/application/photo', { method: 'DELETE' });
     currentApplication.has_photo = false;
     renderPhoto(false);
-    setStatus(applicationStatus, 'Private photo removed.', 'success');
-  } catch (error) { setStatus(applicationStatus, error.message, 'error'); }
+    setStatus(applicationStatus, tr('Private photo removed.','Photo privée supprimée.'), 'success');
+  } catch (error) { setStatus(applicationStatus, errorMessage(error), 'error'); }
 });
 
 loadSession();

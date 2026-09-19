@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f8f1df" />
+  <title>Faire une demande à MapleWish</title>
+  <meta name="description" content="Faites une demande privée d’aide directe auprès de MapleWish." />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="apply-page">
+  <header class="apply-topbar">
+    <a class="brand" href="/fr/"><span class="brand-leaf" aria-hidden="true">🍁</span><span><b>MapleWish</b><small>Demande d’aide privée</small></span></a>
+    <div class="language-switch" aria-label="Langue"><span class="active">Français</span><a href="/apply.html">English</a></div>
+    <a class="button ghost" href="/fr/">← Retour à l’arbre</a>
+  </header>
+
+  <main class="apply-shell">
+    <section class="apply-intro">
+      <span class="eyebrow">BESOIN D’UN COUP DE MAIN?</span>
+      <h1>Dites-nous ce qui ferait une différence.</h1>
+      <p>Les demandes sont privées. Rien de ce que vous écrivez ici n’est rendu public automatiquement. Si votre demande est retenue, l’équipe MapleWish travaillera avec vous avant de partager une histoire, un nom ou une photo.</p>
+      <div class="privacy-strip">
+        <span>🔒 Équipe seulement par défaut</span>
+        <span>📷 Photo facultative</span>
+        <span>🩺 Aucun dossier diagnostique requis pour faire une demande</span>
+      </div>
+    </section>
+    <section id="authPanel" class="apply-card auth-card">
+      <div class="auth-tabs" role="tablist" aria-label="Options du compte">
+        <button class="auth-tab active" type="button" data-auth-tab="register">Créer un compte</button>
+        <button class="auth-tab" type="button" data-auth-tab="login">Se connecter</button>
+      </div>
+
+      <form id="registerForm" class="auth-form">
+        <h2>Commencer une demande privée</h2>
+        <p>Votre compte vous permet de revenir et de mettre votre demande à jour plus tard.</p>
+        <label>Courriel<input name="email" type="email" autocomplete="email" required placeholder="vous@exemple.ca" /></label>
+        <label>Mot de passe<input name="password" type="password" autocomplete="new-password" minlength="10" maxlength="128" required placeholder="Au moins 10 caractères" /></label>
+        <button class="button primary full" type="submit">Créer un compte privé</button>
+      </form>
+
+      <form id="loginForm" class="auth-form hidden">
+        <h2>Bon retour</h2>
+        <p>Connectez-vous pour poursuivre votre demande privée MapleWish.</p>
+        <label>Courriel<input name="email" type="email" autocomplete="email" required /></label>
+        <label>Mot de passe<input name="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" required /></label>
+        <div class="auth-help-row"><a href="/fr/reset-password.html">Mot de passe oublié?</a></div>
+        <button class="button primary full" type="submit">Se connecter</button>
+      </form>
+      <p id="authStatus" class="form-status" aria-live="polite"></p>
+    </section>
+    <section id="applicationPanel" class="apply-card hidden">
+      <div class="application-heading">
+        <div><span class="eyebrow">VOTRE DEMANDE PRIVÉE</span><h2>Une demande claire. Votre contexte complet demeure privé.</h2></div>
+        <div class="applicant-account"><span id="accountEmail"></span><button id="logoutButton" class="text-button" type="button">Se déconnecter</button></div>
+      </div>
+
+      <div id="verificationNotice" class="verification-notice hidden">
+        <div><b>Vérifiez votre adresse courriel</b><span id="verificationCopy">Consultez votre boîte de réception pour le lien de vérification.</span></div>
+        <button id="resendVerificationButton" class="button ghost small" type="button">Renvoyer la vérification</button>
+      </div>
+      <div id="applicationState" class="application-state hidden"></div>
+
+      <form id="applicationForm" class="application-form">
+        <fieldset>
+          <legend>À propos de vous</legend>
+          <div class="form-grid">
+            <label>Nom complet<input name="name" maxlength="120" required /></label>
+            <label>Province / territoire<select name="province" required>
+              <option value="">Choisissez</option><option>Ontario</option><option>Alberta</option><option>Colombie-Britannique</option><option>Québec</option>
+              <option>Manitoba</option><option>Saskatchewan</option><option>Nouvelle-Écosse</option><option>Nouveau-Brunswick</option>
+              <option>Terre-Neuve-et-Labrador</option><option>Île-du-Prince-Édouard</option><option>Territoires du Nord-Ouest</option><option>Nunavut</option><option>Yukon</option>
+            </select></label>
+            <label>Ville / communauté<input name="city" maxlength="120" /></label>
+            <label>Moyen de contact préféré<select name="preferredContact"><option value="email">Courriel</option><option value="phone">Téléphone</option><option value="either">L’un ou l’autre</option></select></label>
+            <label class="wide">Téléphone <span class="optional">facultatif sauf si le téléphone est choisi</span><input name="phone" maxlength="40" inputmode="tel" /></label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Qu’est-ce qui vous aiderait?</legend>
+          <div class="form-grid">
+            <label>Type d’aide<select name="category" required>
+              <option value="">Choisissez</option><option>Logement</option><option>Nourriture / essentiels</option><option>Transport</option>
+              <option>Technologie d’assistance</option><option>Éducation</option><option>Accessibilité</option><option>Soutien familial</option><option>Autre</option>
+            </select></label>
+            <label>Montant demandé (CAD)<input name="requestedAmount" type="number" min="1" max="50000" step="1" required placeholder="500" /></label>
+            <label class="wide">À quoi servirait l’argent?<textarea name="summary" maxlength="1200" rows="3" required placeholder="Soyez précis au sujet de la facture, de l’article, des arriérés, du service ou de l’autre besoin."></textarea></label>
+            <label class="wide">Racontez-nous toute l’histoire <span class="private-label">PRIVÉ — ÉQUIPE SEULEMENT</span><textarea name="privateStory" maxlength="8000" rows="8" required placeholder="Partagez autant de contexte que vous souhaitez afin que nous comprenions la situation lors de l’examen."></textarea></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Si votre souhait est retenu</legend>
+          <p class="fieldset-copy">Cette section nous aide à comprendre ce que vous pourriez être à l’aise de partager plus tard. <b>Ce n’est pas une autorisation de publier quoi que ce soit.</b></p>
+          <div class="form-grid">
+            <label>Comment pourrions-nous vous identifier publiquement?<select name="publicIdentityPreference">
+              <option value="first_name">Prénom seulement</option><option value="full_name">Nom complet</option>
+              <option value="pseudonym">Un pseudonyme</option><option value="anonymous">Anonyme</option>
+            </select></label>
+            <label>Pseudonyme <span class="optional">seulement si choisi ci-dessus</span><input name="publicAlias" maxlength="80" /></label>
+            <label class="wide">Brouillon facultatif de l’histoire publique<textarea name="publicStoryDraft" maxlength="3000" rows="4" placeholder="Si vous le souhaitez, écrivez une version plus courte que vous pourriez accepter de partager publiquement. L’équipe peut aussi vous aider plus tard."></textarea></label>
+            <label class="check wide"><input name="openToPublicStory" type="checkbox" /> Si ma demande est retenue, je suis disposé·e à discuter d’une histoire publique avec l’équipe MapleWish.</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Photo privée facultative</legend>
+          <p class="fieldset-copy">Une photo peut aider l’équipe à comprendre qui se trouve derrière la demande, mais elle n’est pas obligatoire. La téléverser ne donne pas l’autorisation de la publier. Les métadonnées de l’image sont supprimées lors du téléversement.</p>
+          <div class="photo-upload-row">
+            <div id="photoPreview" class="private-photo-preview"><span>📷</span><small>Aucune photo téléversée</small></div>
+            <div>
+              <input id="photoInput" type="file" accept="image/jpeg,image/png,image/webp" />
+              <div class="photo-actions"><button id="uploadPhotoButton" class="button ghost" type="button">Téléverser une photo privée</button><button id="removePhotoButton" class="text-button hidden" type="button">Supprimer</button></div>
+              <small>JPG, PNG ou WebP · jusqu’à 6 Mo</small>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset id="contractLanguageFieldset">
+          <legend>Langue des contrats</legend>
+          <div class="language-contract">
+            <b>Les versions françaises sont présentées en premier.</b>
+            <small><a href="/fr/applicant-privacy.html" target="_blank" rel="noopener">Avis de confidentialité des demandeurs</a> · <a href="/fr/application-terms.html" target="_blank" rel="noopener">Conditions de demande</a></small>
+            <small>Versions anglaises : <a href="/applicant-privacy.html" target="_blank" rel="noopener">Applicant Privacy Notice</a> · <a href="/application-terms.html" target="_blank" rel="noopener">Application Terms</a></small>
+            <label id="englishLanguageChoiceRow" class="check hidden"><input name="englishLanguageChoiceConfirmed" type="checkbox" /> Je choisis expressément de continuer et de contracter en anglais après avoir eu accès aux versions françaises.</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Avant de soumettre</legend>
+          <label class="check"><input name="eligibilityConfirmed" type="checkbox" /> J’ai atteint l’âge de la majorité dans ma province ou mon territoire, j’habite au Canada et je fais une demande pour moi-même ou mon ménage.</label>
+          <label class="check"><input name="accuracyConfirmed" type="checkbox" /> Les renseignements fournis sont exacts au meilleur de ma connaissance.</label>
+          <label class="check"><input name="privacyAcknowledged" type="checkbox" /> J’ai lu et compris l’<a href="/fr/applicant-privacy.html" target="_blank" rel="noopener">Avis de confidentialité des demandeurs</a>.</label>
+          <label class="check"><input name="applicationTermsAccepted" type="checkbox" /> J’accepte les <a href="/fr/application-terms.html" target="_blank" rel="noopener">Conditions de demande</a>, y compris le fait qu’une demande ne garantit pas une aide.</label>
+          <p class="fieldset-copy">Votre demande complète, votre histoire privée et votre photo facultative demeurent privées à moins que vous n’approuviez plus tard du contenu précis pour publication. Consultez le <a href="/fr/story-consent.html" target="_blank" rel="noopener">Consentement à la publication d’une histoire et d’une photo</a>.</p>
+        </fieldset>
+
+        <div class="application-actions">
+          <button id="saveButton" class="button ghost" type="submit" data-action="save" formnovalidate>Enregistrer le brouillon</button>
+          <button id="submitButton" class="button primary" type="submit" data-action="submit">Enregistrer et soumettre pour examen</button>
+        </div>
+        <p id="applicationStatus" class="form-status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+  <footer class="legal-footer"><nav><a href="/fr/applicant-privacy.html">Confidentialité des demandeurs</a><a href="/fr/application-terms.html">Conditions de demande</a><a href="/fr/privacy.html">Politique de confidentialité</a><a href="/fr/terms.html">Conditions</a><a href="/fr/story-consent.html">Consentement histoire/photo</a></nav><p>© MapleWish · Exploité par Maple Vibe Inc.</p></footer>
+  <script type="module" src="/apply.js"></script>
+</body>
+</html>

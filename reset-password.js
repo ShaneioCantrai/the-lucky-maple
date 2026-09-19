@@ -4,6 +4,8 @@ const resetPanel = $('resetPanel');
 const unavailablePanel = $('recoveryUnavailable');
 const requestStatus = $('requestStatus');
 const resetStatus = $('resetStatus');
+const IS_FR = document.documentElement.lang.toLowerCase().startsWith('fr');
+const tr = (en, fr) => IS_FR ? fr : en;
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -30,7 +32,7 @@ async function initialize() {
   if (token) {
     requestPanel.classList.add('hidden');
     resetPanel.classList.remove('hidden');
-    history.replaceState({}, '', '/reset-password.html');
+    history.replaceState({}, '', IS_FR ? '/fr/reset-password.html' : '/reset-password.html');
     return;
   }
 
@@ -49,14 +51,14 @@ $('requestResetForm').addEventListener('submit', async event => {
   const form = new FormData(event.currentTarget);
   const button = event.currentTarget.querySelector('button[type="submit"]');
   button.disabled = true;
-  setStatus(requestStatus, 'Sending reset instructions…');
+  setStatus(requestStatus, tr('Sending reset instructions…','Envoi des instructions de réinitialisation…'));
   try {
     const data = await api('/api/help/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email: form.get('email') }),
     });
     event.currentTarget.reset();
-    setStatus(requestStatus, data.message || 'If an account exists for that email, a reset link has been sent.', 'success');
+    setStatus(requestStatus, tr('If an account exists for that email, a reset link has been sent.','Si un compte existe pour ce courriel, un lien de réinitialisation a été envoyé.'), 'success');
   } catch (error) {
     setStatus(requestStatus, error.message, 'error');
   } finally {
@@ -69,13 +71,13 @@ $('resetPasswordForm').addEventListener('submit', async event => {
   const password = String(form.get('password') || '');
   const confirm = String(form.get('confirmPassword') || '');
   if (password !== confirm) {
-    setStatus(resetStatus, 'The two passwords do not match.', 'error');
+    setStatus(resetStatus, tr('The two passwords do not match.','Les deux mots de passe ne correspondent pas.'), 'error');
     return;
   }
 
   const button = event.currentTarget.querySelector('button[type="submit"]');
   button.disabled = true;
-  setStatus(resetStatus, 'Updating your password…');
+  setStatus(resetStatus, tr('Updating your password…','Mise à jour de votre mot de passe…'));
   try {
     await api('/api/help/auth/reset-password', {
       method: 'POST',
@@ -83,7 +85,9 @@ $('resetPasswordForm').addEventListener('submit', async event => {
     });
     event.currentTarget.reset();
     event.currentTarget.classList.add('hidden');
-    resetStatus.innerHTML = 'Password updated. <a href="/apply.html">Sign in with your new password →</a>';
+    resetStatus.innerHTML = IS_FR
+      ? 'Mot de passe mis à jour. <a href="/fr/apply.html">Connectez-vous avec votre nouveau mot de passe →</a>'
+      : 'Password updated. <a href="/apply.html">Sign in with your new password →</a>';
     resetStatus.dataset.kind = 'success';
   } catch (error) {
     setStatus(resetStatus, error.message, 'error');

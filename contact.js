@@ -1,5 +1,7 @@
 const form = document.getElementById('contactForm');
 const status = document.getElementById('contactStatus');
+const IS_FR = document.documentElement.lang.toLowerCase().startsWith('fr');
+const tr = (en, fr) => IS_FR ? fr : en;
 
 function setStatus(message, kind = '') {
   status.textContent = message || '';
@@ -11,7 +13,7 @@ form.addEventListener('submit', async event => {
   const data = new FormData(form);
   const button = form.querySelector('button[type="submit"]');
   button.disabled = true;
-  setStatus('Sending…');
+  setStatus(tr('Sending…','Envoi…'));
   try {
     const response = await fetch('/api/contact', {
       method: 'POST',
@@ -25,11 +27,11 @@ form.addEventListener('submit', async event => {
       }),
     });
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.error || 'Your message could not be submitted.');
+    if (!response.ok) throw new Error(body.error || tr('Your message could not be submitted.','Votre message n’a pas pu être envoyé.'));
     form.reset();
-    setStatus('Message received. Reference: ' + body.reference, 'success');
+    setStatus(tr('Message received. Reference: ','Message reçu. Référence : ') + body.reference, 'success');
   } catch (error) {
-    setStatus(error.message || 'Your message could not be submitted.', 'error');
+    setStatus(error.message || tr('Your message could not be submitted.','Votre message n’a pas pu être envoyé.'), 'error');
   } finally {
     button.disabled = false;
   }

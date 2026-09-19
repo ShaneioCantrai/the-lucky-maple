@@ -11,6 +11,7 @@
 <body class="apply-page">
   <header class="apply-topbar">
     <a class="brand" href="/"><span class="brand-leaf" aria-hidden="true">🍁</span><span><b>MapleWish</b><small>Private help application</small></span></a>
+    <div class="language-switch" aria-label="Language"><a href="/fr/apply.html">Français</a><span class="active">English</span></div>
     <a class="button ghost" href="/">← Back to the tree</a>
   </header>
 
@@ -113,6 +114,16 @@
               <div class="photo-actions"><button id="uploadPhotoButton" class="button ghost" type="button">Upload private photo</button><button id="removePhotoButton" class="text-button hidden" type="button">Remove</button></div>
               <small>JPG, PNG, or WebP · up to 6 MB</small>
             </div>
+          </div>
+        </fieldset>
+
+        <fieldset id="contractLanguageFieldset">
+          <legend>Contract language / Langue des contrats</legend>
+          <div class="language-contract">
+            <b>Les versions françaises sont disponibles en premier.</b>
+            <small><a href="/fr/applicant-privacy.html" target="_blank" rel="noopener">Avis de confidentialité des demandeurs</a> · <a href="/fr/application-terms.html" target="_blank" rel="noopener">Conditions de demande</a></small>
+            <small>English versions: <a href="/applicant-privacy.html" target="_blank" rel="noopener">Applicant Privacy Notice</a> · <a href="/application-terms.html" target="_blank" rel="noopener">Application Terms</a></small>
+            <label id="englishLanguageChoiceRow" class="check hidden"><input name="englishLanguageChoiceConfirmed" type="checkbox" /> I expressly choose to continue and contract in English after being given access to the French versions.</label>
           </div>
         </fieldset>
 

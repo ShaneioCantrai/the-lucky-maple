@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#f8f1df" />
+  <title>MapleWish</title>
+  <meta name="description" content="Plantez une feuille sur MapleWish. 50 % de chaque feuille payée va à l’aide directe pour des personnes neurodivergentes au Canada. Concours hebdomadaire au Canada; aucun achat requis." />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#home" aria-label="Accueil MapleWish">
+        <span class="brand-leaf" aria-hidden="true">🍁</span>
+        <span><b>MapleWish</b><small>Un arbre un peu ridicule. Des milliers de personnes.</small></span>
+      </a>
+      <nav class="main-nav" aria-label="Navigation principale">
+        <a class="active" href="#home">Accueil</a>
+        <a href="#how">Comment ça marche</a>
+        <a href="#impact">Impact</a>
+        <a href="#stories">Histoires</a>
+        <a href="/fr/apply.html">Besoin d’aide?</a>
+        <a href="#winners">Gagnants précédents</a>
+      </nav>
+      <div class="top-actions">
+        <div class="language-switch" aria-label="Langue"><span class="active">Français</span><a href="/">English</a></div>
+        <button class="button ghost" data-share="native">Partager cet arbre</button>
+        <button class="button primary" data-open="plant">Planter une feuille · 1 $+</button>
+      </div>
+    </header>
+
+    <section class="hero" id="home">
+      <div class="scene" aria-hidden="true">
+        <img class="scene-bg" src="/img/web/scene/background-autumn-lake.webp" alt="" />
+        <div class="tree-layer trunk"><img src="/img/web/tree/tree-trunk.webp" alt="" /></div>
+        <img class="scene-bird" src="/img/web/critters/bird-chickadee.webp" alt="" />
+        <svg id="leafStage" class="leaf-stage" viewBox="0 0 1672 941" aria-hidden="true">
+          <defs><symbol id="mapleLeaf" viewBox="-18 -20 36 42"><path d="M0-19 4-9 11-13 9-5 17-2 10 4 14 11 5 9 3 20-3 20-5 9-14 11-10 4-17-2-9-5-11-13-4-9Z" /></symbol></defs>
+          <g id="leafLayer"></g>
+        </svg>
+        <div id="ambientLeaves" class="ambient-leaves"></div>
+        <img class="scene-foreground" src="/img/web/scene/foreground-foliage.webp" alt="" />
+      </div>
+      <section class="hero-copy" aria-labelledby="heroTitle">
+        <h1 id="heroTitle">Petite feuille.<br><span>Grand changement.</span></h1>
+        <p>Plantez une feuille pour <b>1 $</b>. Choisissez <b>5 $</b>, <b>10 $</b> ou <b>25 $+</b> et votre feuille grandira aussi. Chaque contribution fait grandir notre arbre et notre communauté.</p>
+      </section>
+
+      <section class="share-card" aria-label="Partager cet arbre">
+        <span class="card-kicker">📣 AIDEZ CET ARBRE À VOYAGER</span>
+        <strong>Partagez l’arbre.</strong>
+        <p>Vous ne pouvez pas planter une autre feuille? En partageant l’arbre, vous pouvez rejoindre la prochaine personne qui le pourra.</p>
+        <button class="button share-primary full" data-share="native">Partager cet arbre →</button>
+        <div class="social-share-grid" aria-label="Options de partage">
+          <button class="social-button facebook" data-share="facebook"><span>f</span>Facebook</button>
+          <button class="social-button whatsapp" data-share="whatsapp"><span>●</span>WhatsApp</button>
+          <button class="social-button xshare" data-share="x"><span>𝕏</span>X</button>
+          <button class="social-button email" data-share="email"><span>✉</span>Courriel</button>
+          <button class="social-button copy" data-share="copy"><span>↗</span>Copier le lien</button>
+        </div>
+        <small class="share-meta"><b id="shareClicks">0</b> partages lancés sur cet appareil · les liens partagés contiennent une référence.</small>
+      </section>
+
+      <aside class="impact-card" id="impact">
+        <div class="impact-title"><span>🍁</span><b>Fonds recueillis</b></div>
+        <strong id="fundsRaised">$0.00 CAD</strong>
+        <span class="impact-subtitle">pour des personnes neurodivergentes au Canada</span>
+        <div class="impact-grid">
+          <div><b id="impactLeaves">0</b><span>Feuilles plantées</span></div>
+          <div><b id="impactDelivered">$0</b><span>Aide directe versée</span></div>
+          <div><b id="impactPrize">$100</b><span>Concours hebdomadaire</span></div>
+        </div>
+        <small>De vraies personnes. Un vrai soutien. Un Canada plus lumineux.</small>
+      </aside>
+      <div class="tree-counter" aria-live="polite">
+        <span class="counter-leaf">🍁</span>
+        <b id="leafCount">0</b>
+        <span>feuilles plantées</span>
+        <span class="counter-divider">›</span>
+        <small>Cliquez sur une feuille pour l’explorer</small>
+      </div>
+
+      <section class="hero-steps" id="how" aria-label="Comment MapleWish fonctionne">
+        <div><span class="step-icon">🍁</span><p><b>1. Plantez une feuille.</b><small>Choisissez une feuille et ajoutez votre nom pour 1 $.</small></p></div>
+        <div><span class="step-icon">❤</span><p><b>2. Soutenez un impact réel.</b><small>50 % de chaque feuille payée va à l’aide directe pour des personnes neurodivergentes au Canada.</small></p></div>
+        <div><span class="step-icon">🏆</span><p><b>3. Tentez votre chance.</b><small>Les résidents canadiens peuvent participer gratuitement au concours hebdomadaire.</small></p></div>
+      </section>
+    </section>
+
+    <section class="stories-section" id="stories">
+      <div class="stories-heading">
+        <div>
+          <span class="eyebrow">LES PERSONNES DERRIÈRE LES SOUHAITS</span>
+          <h2>De vraies personnes. Un souhait à la fois.</h2>
+        </div>
+        <p>Chaque souhait a un objectif clair, une étape visible et une vraie personne derrière lui. Le partage d’une histoire demeure toujours facultatif pour les personnes qui reçoivent de l’aide.</p>
+      </div>
+
+      <article class="wish-card founder-wish">
+        <div class="wish-photo-placeholder" role="img" aria-label="Espace réservé pour la photo de la famille fondatrice">
+          <span aria-hidden="true">🍁</span>
+          <b>Photo de famille</b>
+          <small>Espace réservé pour la photo choisie</small>
+        </div>
+        <div class="wish-card-body">
+          <div class="wish-meta">
+            <span class="wish-badge">HISTOIRE DU FONDATEUR · APERÇU</span>
+            <span>Ontario</span>
+          </div>
+          <h3>Aidez notre famille à rester dans notre maison.</h3>
+          <p class="wish-summary">Nous faisons face à un important manque à gagner lié au logement et nous essayons de créer assez de marge de manœuvre pour garder notre famille dans notre maison pendant que nous réglons le reste. Nous sommes aussi la famille derrière MapleWish, et nous le disons clairement dès le départ.</p>
+
+          <div class="wish-progress-heading">
+            <strong>Première étape</strong>
+            <span>0 $ sur 2 000 $</span>
+          </div>
+          <div class="wish-progress" role="progressbar" aria-label="Première étape de la famille fondatrice" aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0">
+            <span style="width:0%"></span>
+          </div>
+          <p class="wish-goal-note">Nous avançons une étape à la fois. L’histoire complète explique la situation plus vaste et ce que ce premier objectif change concrètement.</p>
+
+          <div class="wish-actions">
+            <button class="story-link" type="button" data-open="story">Lire notre histoire →</button>
+            <button class="button primary" type="button" data-open="plant">Aider ce souhait</button>
+          </div>
+        </div>
+      </article>
+
+      <div class="next-wishes" aria-label="Prochaines histoires MapleWish">
+        <article class="next-wish-card">
+          <span class="wish-slot-number">02</span>
+          <div><b>Prochain souhait</b><p>Les demandes sont ouvertes. Cet espace sera réservé à une vraie personne qui fait une demande et choisit de partager son histoire.</p></div>
+        </article>
+        <article class="next-wish-card">
+          <span class="wish-slot-number">03</span>
+          <div><b>Un autre souhait</b><p>Un deuxième souhait de la communauté apparaîtra ici après examen et approbation.</p></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="application-cta" aria-label="Demander de l’aide à MapleWish">
+      <div>
+        <span class="eyebrow">BESOIN D’UN COUP DE MAIN?</span>
+        <h3>Faites une demande à MapleWish.</h3>
+        <p>Dites à l’équipe ce qui ferait une différence et revenez en tout temps pour vérifier l’état de votre demande.</p>
+      </div>
+      <a class="button" href="/fr/apply.html">Commencer une demande →</a>
+    </section>
+
+    <footer id="winners">
+      <span>© MapleWish · Exploité par Maple Vibe Inc.</span>
+      <nav><a href="/fr/privacy.html">Confidentialité</a><a href="/fr/terms.html">Conditions</a><a href="/fr/contribution-terms.html">Conditions de contribution</a><a href="/fr/refunds.html">Remboursements</a><a href="/fr/rules.html">Règlement officiel</a><a href="#" data-open="free-entry">Participation gratuite</a><a href="/fr/apply.html">Demander de l’aide</a><a href="/fr/contact.html">Contact</a></nav>
+      <small>Concours réservé au Canada. Âge de la majorité requis. Aucun achat nécessaire. Question d’habileté mathématique requise. Prix financé séparément par MapleWish et/ou des commanditaires.</small>
+    </footer>
+  </main>
+  <dialog id="leafDialog" class="modal">
+    <button class="close" data-close aria-label="Fermer">×</button>
+    <div id="leafDialogBody"></div>
+  </dialog>
+
+  <dialog id="storyDialog" class="modal story-modal" aria-labelledby="storyTitle">
+    <button class="close" data-close aria-label="Fermer">×</button>
+    <div class="story-modal-photo" role="img" aria-label="Espace réservé pour la photo de la famille fondatrice">
+      <span aria-hidden="true">🍁</span>
+      <small>Votre photo de famille ira ici</small>
+    </div>
+    <span class="eyebrow">NOTRE PREMIER SOUHAIT · HISTOIRE DU FONDATEUR</span>
+    <h2 id="storyTitle">Pourquoi nous demandons de l’aide.</h2>
+    <p class="story-preview-note"><b>Texte d’aperçu :</b> cette section est volontairement temporaire afin que vous puissiez la remplacer par la vraie histoire et la vraie photo de votre famille avant le lancement.</p>
+    <p>Nous faisons face à un manque à gagner lié au logement devenu trop important pour être réglé d’un seul coup. Environ <b>8 000 $</b> permettrait de sortir notre famille de la zone de danger immédiat, mais nous commençons par une étape gérable plutôt que d’afficher ce montant complet dès le départ.</p>
+    <p>Notre premier objectif est de <b>2 000 $</b>. L’atteindre nous donnerait un peu de marge de manœuvre pendant que nous continuons à travailler sur le reste.</p>
+    <p>Je suis aussi la personne qui a créé MapleWish. Je veux que ce lien soit parfaitement clair : notre famille fait partie des premières familles à demander de l’aide ici, et cette histoire du fondateur est présentée ouvertement plutôt que comme celle d’un demandeur sans lien avec le projet.</p>
+    <p class="story-placeholder-copy">C’est ici que se trouvera l’explication personnelle complète — ce qui s’est passé, ce que le fait de garder la maison signifie pour votre famille, ce que change la première étape et pourquoi vous avez décidé de créer MapleWish.</p>
+    <div class="story-transparency">
+      <b>Transparence</b>
+      <dl>
+        <div><dt>Fondateur / bénéficiaire</dt><dd>Oui</dd></div>
+        <div><dt>Première étape</dt><dd>2 000 $</dd></div>
+        <div><dt>Manque à gagner total</dt><dd>Environ 8 000 $</dd></div>
+        <div><dt>Après cette étape</dt><dd>Une nouvelle étape est affichée séparément</dd></div>
+      </dl>
+    </div>
+    <button class="button primary full" type="button" data-open="plant">Aider ce souhait</button>
+  </dialog>
+
+  <dialog id="plantDialog" class="modal">
+    <button class="close" data-close aria-label="Fermer">×</button>
+    <span class="eyebrow">PLANTEZ VOTRE FEUILLE</span>
+    <h2>Choisissez la taille de votre feuille.</h2>
+    <p>Chaque contribution plante une feuille. Les contributions plus importantes font pousser une feuille plus grande sur l’arbre.</p>
+    <div class="leaf-tier-picker" role="group" aria-label="Choisir le montant de la contribution">
+      <button type="button" class="leaf-tier-option selected" data-leaf-amount="1"><b>1 $</b><span>Feuille</span></button>
+      <button type="button" class="leaf-tier-option" data-leaf-amount="5"><b>5 $</b><span>Plus grande</span></button>
+      <button type="button" class="leaf-tier-option" data-leaf-amount="10"><b>10 $</b><span>Grande</span></button>
+      <button type="button" class="leaf-tier-option" data-leaf-amount="25"><b>25 $+</b><span>La plus grande</span></button>
+    </div>
+    <label id="customAmountLabel" class="custom-amount hidden">Montant · minimum 25 $<input id="plantAmount" type="number" min="25" step="1" value="25" inputmode="decimal" /></label>
+    <label>Nom affiché<input id="plantName" maxlength="28" placeholder="Gros Dave" /></label>
+    <label>Message sur la feuille<input id="plantMessage" maxlength="60" placeholder="Je n’arrive pas à croire que j’ai acheté ça." /></label>
+    <label>Courriel pour le reçu et la récupération<input id="plantEmail" type="email" placeholder="vous@exemple.ca" /></label>
+    <button class="button primary full" id="mockCheckout">Continuer · 1 $ CAD</button>
+    <small>Une contribution plante une feuille. À partir de 25 $, la plus grande taille de feuille est utilisée. En continuant, vous acceptez les <a href="/fr/contribution-terms.html" target="_blank" rel="noopener">Conditions de contribution</a> et les <a href="/fr/terms.html" target="_blank" rel="noopener">Conditions d’utilisation</a>. Consultez la <a href="/fr/refunds.html" target="_blank" rel="noopener">Politique de remboursement</a>. Les paiements ne sont pas encore branchés dans ce prototype.</small>
+  </dialog>
+
+  <dialog id="freeEntryDialog" class="modal">
+    <button class="close" data-close aria-label="Fermer">×</button>
+    <span class="eyebrow">AUCUN ACHAT NÉCESSAIRE</span>
+    <h2>Participez au concours de cette semaine.</h2>
+    <label>Nom<input id="entryName" maxlength="60" placeholder="Votre nom" /></label>
+    <label>Courriel<input id="entryEmail" type="email" placeholder="vous@exemple.ca" /></label>
+    <label>Province / territoire<select id="entryProvince"><option>Ontario</option><option>Alberta</option><option>Colombie-Britannique</option><option>Québec</option><option>Manitoba</option><option>Saskatchewan</option><option>Nouvelle-Écosse</option><option>Nouveau-Brunswick</option><option>Terre-Neuve-et-Labrador</option><option>Île-du-Prince-Édouard</option><option>Territoires du Nord-Ouest</option><option>Nunavut</option><option>Yukon</option></select></label>
+    <div class="language-contract">
+      <b>Les règles officielles en français sont disponibles en premier.</b>
+      <small><a href="/fr/rules.html" target="_blank" rel="noopener">Règles officielles en français</a> · <a href="/rules.html" target="_blank" rel="noopener">Règlement officiel en anglais</a></small>
+      <label id="entryEnglishChoiceRow" class="check hidden"><input id="entryEnglishChoice" type="checkbox" /> Je choisis expressément de participer selon le règlement en anglais après avoir eu accès au règlement en français.</label>
+    </div>
+    <label class="check"><input id="entryRules" type="checkbox" /> J’ai atteint l’âge de la majorité dans ma province ou mon territoire et j’accepte le <a href="/fr/rules.html" target="_blank" rel="noopener">Règlement officiel</a>.</label>
+    <label class="check"><input id="entryMarketing" type="checkbox" /> Envoyez-moi les prochaines nouvelles et nouveautés MapleWish par courriel. <em>Facultatif.</em></label>
+    <button class="button primary full" id="submitEntry">Participer au tirage de cette semaine</button>
+    <small>Acheter une feuille n’améliore pas vos chances de gagner. Une question d’habileté mathématique est requise si vous êtes sélectionné·e.</small>
+    <p id="entryStatus" class="form-status" aria-live="polite"></p>
+  </dialog>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

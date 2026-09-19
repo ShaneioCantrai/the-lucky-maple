@@ -7,6 +7,9 @@ export const contestEntrySchema = z.object({
   country: z.literal('CA').default('CA'),
   ageConfirmed: z.literal(true),
   rulesAccepted: z.literal(true),
+  rulesLanguage: z.enum(['en-CA','fr-CA']).default('en-CA'),
+  frenchRulesPresented: z.boolean().default(false),
+  englishLanguageChoiceConfirmed: z.boolean().default(false),
   marketingConsent: z.boolean().default(false),
   entryMethod: z.enum(['free', 'purchase']).default('free'),
   orderId: z.string().uuid().optional(),
@@ -15,6 +18,7 @@ export const contestEntrySchema = z.object({
 export const applicantCredentialsSchema = z.object({
   email: z.string().trim().email().max(254),
   password: z.string().min(10).max(128),
+  language: z.enum(['en-CA','fr-CA']).default('en-CA'),
 });
 
 export const applicantEmailSchema = z.object({
@@ -52,6 +56,9 @@ export const helpApplicationSchema = z.object({
   accuracyConfirmed: z.boolean().default(false),
   privacyAcknowledged: z.boolean().default(false),
   applicationTermsAccepted: z.boolean().default(false),
+  contractLanguage: z.enum(['en-CA','fr-CA']).default('en-CA'),
+  frenchVersionPresented: z.boolean().default(false),
+  englishLanguageChoiceConfirmed: z.boolean().default(false),
 });
 
 export const helpApplicationDraftSchema = z.object({
@@ -72,6 +79,9 @@ export const helpApplicationDraftSchema = z.object({
   accuracyConfirmed: z.boolean().default(false),
   privacyAcknowledged: z.boolean().default(false),
   applicationTermsAccepted: z.boolean().default(false),
+  contractLanguage: z.enum(['en-CA','fr-CA']).default('en-CA'),
+  frenchVersionPresented: z.boolean().default(false),
+  englishLanguageChoiceConfirmed: z.boolean().default(false),
 });
 
 export const mockPurchaseSchema = z.object({

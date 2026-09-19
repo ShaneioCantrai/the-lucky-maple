@@ -24,6 +24,7 @@
         <a href="#winners">Past Winners</a>
       </nav>
       <div class="top-actions">
+        <div class="language-switch" aria-label="Language"><a href="/fr/">Français</a><span class="active">English</span></div>
         <button class="button ghost" data-share="native">Share this tree</button>
         <button class="button primary" data-open="plant">Plant a leaf · $1+</button>
       </div>
@@ -198,8 +199,15 @@
     <label>Display name<input id="plantName" maxlength="28" placeholder="Big Dave" /></label>
     <label>Leaf message<input id="plantMessage" maxlength="60" placeholder="I can't believe I bought this." /></label>
     <label>Email for receipt & recovery<input id="plantEmail" type="email" placeholder="you@example.com" /></label>
+    <div class="language-contract">
+      <b>Les conditions françaises sont disponibles en premier.</b>
+      <small><a href="/fr/contribution-terms.html" target="_blank" rel="noopener">Conditions de contribution</a> · <a href="/fr/terms.html" target="_blank" rel="noopener">Conditions d’utilisation</a> · <a href="/fr/refunds.html" target="_blank" rel="noopener">Remboursements</a></small>
+      <small>English: <a href="/contribution-terms.html" target="_blank" rel="noopener">Contribution Terms</a> · <a href="/terms.html" target="_blank" rel="noopener">Terms of Use</a> · <a href="/refunds.html" target="_blank" rel="noopener">Refund Policy</a></small>
+      <label class="check"><input id="plantEnglishChoice" type="checkbox" /> I expressly choose to proceed under the English terms after being given access to the French versions.</label>
+    </div>
     <button class="button primary full" id="mockCheckout">Continue · $1 CAD</button>
-    <small>One contribution plants one leaf. $25 and above uses the largest leaf size. By continuing, you agree to the <a href="/contribution-terms.html" target="_blank" rel="noopener">Contribution Terms</a> and <a href="/terms.html" target="_blank" rel="noopener">Terms of Use</a>. See the <a href="/refunds.html" target="_blank" rel="noopener">Refund Policy</a>. Payments are not connected in this prototype yet.</small>
+    <small>One contribution plants one leaf. $25 and above uses the largest leaf size. Payments are not connected in this prototype yet.</small>
+    <p id="plantStatus" class="form-status" aria-live="polite"></p>
   </dialog>
 
   <dialog id="freeEntryDialog" class="modal">
@@ -209,6 +217,11 @@
     <label>Name<input id="entryName" maxlength="60" placeholder="Your name" /></label>
     <label>Email<input id="entryEmail" type="email" placeholder="you@example.com" /></label>
     <label>Province / territory<select id="entryProvince"><option>Ontario</option><option>Alberta</option><option>British Columbia</option><option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option><option>Nova Scotia</option><option>New Brunswick</option><option>Newfoundland and Labrador</option><option>Prince Edward Island</option><option>Northwest Territories</option><option>Nunavut</option><option>Yukon</option></select></label>
+    <div class="language-contract">
+      <b>Les règles officielles en français sont disponibles en premier.</b>
+      <small><a href="/fr/rules.html" target="_blank" rel="noopener">Règles officielles en français</a> · <a href="/rules.html" target="_blank" rel="noopener">Official Rules in English</a></small>
+      <label id="entryEnglishChoiceRow" class="check hidden"><input id="entryEnglishChoice" type="checkbox" /> I expressly choose to enter under the English rules after being given access to the French rules.</label>
+    </div>
     <label class="check"><input id="entryRules" type="checkbox" /> I have reached the age of majority in my province or territory and agree to the <a href="/rules.html" target="_blank" rel="noopener">Official Rules</a>.</label>
     <label class="check"><input id="entryMarketing" type="checkbox" /> Email me future Leaf Drops and MapleWish news. <em>Optional.</em></label>
     <button class="button primary full" id="submitEntry">Enter this week's draw</button>

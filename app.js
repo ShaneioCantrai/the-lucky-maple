@@ -8,13 +8,25 @@ const storyDialog = document.getElementById("storyDialog");
 const freeEntryDialog = document.getElementById("freeEntryDialog");
 const dialogBody = document.getElementById("leafDialogBody");
 const ambientLeaves = document.getElementById("ambientLeaves");
+const IS_FR = document.documentElement.lang.toLowerCase().startsWith("fr");
+const LOCALE = IS_FR ? "fr-CA" : "en-CA";
+const tr = (en, fr) => IS_FR ? fr : en;
 
-const plantNamePlaceholders = [
+const plantNamePlaceholders = IS_FR ? [
+  "Gros Dave", "Certainement pas un orignal", "Feuille McFeuille", "Capitaine Sirop",
+  "Votre cousin préféré", "Juste un Canadien", "Pas un robot, promis", "NordiqueNerd",
+  "Désolé là", "Propriétaire professionnel de feuille", "Quelqu’un aux excellentes priorités", "Érable Érik"
+] : [
   "Big Dave", "Definitely Not A Moose", "Maple McMapleface", "Leaf Erikson",
   "Captain Syrup", "Your Favourite Cousin", "Just Some Canadian", "Not A Bot, Promise",
   "NorthernNerd", "Sorry Eh", "Professional Leaf Owner", "Person With Excellent Priorities"
 ];
-const plantMessagePlaceholders = [
+const plantMessagePlaceholders = IS_FR ? [
+  "Je n’arrive pas à croire que j’ai acheté ça.", "Ça semblait financièrement responsable.", "Moins cher que de nommer une étoile.",
+  "Dites à mon comptable que c’était nécessaire.", "Je suis venu. J’ai vu. J’ai planté.", "Historiens du futur : de rien.",
+  "Un dollar. Zéro regret.", "Apparemment, je possède maintenant du feuillage Internet.", "Ajoutez ça à mon dossier permanent.",
+  "Maman, regarde! J’ai une feuille.", "On m’avait promis du sirop d’érable.", "Ça semblait important à 2 h du matin."
+] : [
   "I can't believe I bought this.", "This felt financially responsible.", "Cheaper than naming a star.",
   "Please tell my accountant this was necessary.", "I came. I saw. I planted.", "Future historians: you're welcome.",
   "One dollar. Zero regrets.", "Apparently I own internet foliage now.", "Put this on my permanent record.",
@@ -47,7 +59,7 @@ function openPlantDialog() {
 function escapeHtml(value = "") {
   return String(value).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
 }
-function money(cents) { return `$${(Number(cents || 0) / 100).toLocaleString("en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD`; }
+function money(cents) { return `$${(Number(cents || 0) / 100).toLocaleString(LOCALE, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} CAD`; }
 function leafTierForAmount(cents) {
   const dollars = Number(cents || 0) / 100;
   if (dollars >= 25) return 25;
@@ -59,7 +71,9 @@ function leafScaleForAmount(cents) {
   return ({ 1: 1, 5: 1.25, 10: 1.5, 25: 1.85 })[leafTierForAmount(cents)];
 }
 function tierName(cents) {
-  return ({ 1: 'Leaf', 5: 'Bigger leaf', 10: 'Large leaf', 25: 'Largest leaf' })[leafTierForAmount(cents)];
+  const en = { 1: 'Leaf', 5: 'Bigger leaf', 10: 'Large leaf', 25: 'Largest leaf' };
+  const fr = { 1: 'Feuille', 5: 'Feuille plus grande', 10: 'Grande feuille', 25: 'Plus grande feuille' };
+  return (IS_FR ? fr : en)[leafTierForAmount(cents)];
 }
 const random = seeded(8675309);
 const leaves = [];
@@ -90,9 +104,11 @@ function refreshLeafElement(leaf) {
   leaf.element.setAttribute("width", leaf.size);
   leaf.element.setAttribute("height", leaf.size);
   leaf.element.setAttribute("transform", `rotate(${leaf.rotation} ${leaf.x} ${leaf.y})`);
-  leaf.element.setAttribute("href", `img/web/leaves/leaf-${String(spriteIndex).padStart(2, "0")}.webp`);
+  leaf.element.setAttribute("href", `/img/web/leaves/leaf-${String(spriteIndex).padStart(2, "0")}.webp`);
   leaf.element.setAttribute("class", `leaf ${variant} leaf-tier-${leafTierForAmount(leaf.amountCents)}`);
-  leaf.element.setAttribute("aria-label", leaf.claimed ? `Claimed ${tierName(leaf.amountCents)} ${leaf.id}` : `Available leaf ${leaf.id}`);
+  leaf.element.setAttribute("aria-label", leaf.claimed
+    ? `${tr('Claimed','Réclamée')} ${tierName(leaf.amountCents)} ${leaf.id}`
+    : `${tr('Available leaf','Feuille disponible')} ${leaf.id}`);
 }
 
 let nextId = 1;
@@ -113,8 +129,8 @@ for (const { cx, cy, rx, ry, count } of CANOPY_ZONES) {
   }
 }
 function updateLeafCount(value = leaves.filter(leaf => leaf.claimed).length) {
-  document.getElementById("leafCount").textContent = Number(value).toLocaleString("en-CA");
-  document.getElementById("impactLeaves").textContent = Number(value).toLocaleString("en-CA");
+  document.getElementById("leafCount").textContent = Number(value).toLocaleString(LOCALE);
+  document.getElementById("impactLeaves").textContent = Number(value).toLocaleString(LOCALE);
 }
 updateLeafCount();
 
@@ -124,16 +140,16 @@ function openLeaf(id) {
   const number = String(id).padStart(6, "0");
   if (leaf.claimed) {
     const contributionAmount = money(leaf.amountCents || 100).replace(".00 CAD", "");
-    dialogBody.innerHTML = `<span class="leaf-card-number">LEAF #${number}</span>
-      <h2>${escapeHtml(leaf.owner || "MapleWish Friend")}</h2>
+    dialogBody.innerHTML = `<span class="leaf-card-number">${tr('LEAF','FEUILLE')} #${number}</span>
+      <h2>${escapeHtml(leaf.owner || tr("MapleWish Friend","Ami·e MapleWish"))}</h2>
       <div class="leaf-contribution">🍁 ${contributionAmount} · ${tierName(leaf.amountCents || 100)}</div>
-      <div class="leaf-card-message">“${escapeHtml(leaf.message || "Planted on MapleWish.")}”</div>
-      <button class="button ghost full" id="copyLeafLink">Copy leaf link</button>`;
+      <div class="leaf-card-message">“${escapeHtml(leaf.message || tr("Planted on MapleWish.","Plantée sur MapleWish."))}”</div>
+      <button class="button ghost full" id="copyLeafLink">${tr('Copy leaf link','Copier le lien de la feuille')}</button>`;
     dialogBody.querySelector("#copyLeafLink").addEventListener("click", () => navigator.clipboard?.writeText(`${location.origin}${location.pathname}#leaf-${id}`));
   } else {
-    dialogBody.innerHTML = `<span class="leaf-card-number">LEAF #${number}</span>
-      <h2>This leaf is available.</h2><p>Plant it for $1, or choose $5, $10, or $25+ to grow a bigger leaf.</p>
-      <button class="button primary full" id="claimThisLeaf">Choose your leaf size</button>`;
+    dialogBody.innerHTML = `<span class="leaf-card-number">${tr('LEAF','FEUILLE')} #${number}</span>
+      <h2>${tr('This leaf is available.','Cette feuille est disponible.')}</h2><p>${tr('Plant it for $1, or choose $5, $10, or $25+ to grow a bigger leaf.','Plantez-la pour 1 $, ou choisissez 5 $, 10 $ ou 25 $+ pour faire pousser une feuille plus grande.')}</p>
+      <button class="button primary full" id="claimThisLeaf">${tr('Choose your leaf size','Choisir la taille de votre feuille')}</button>`;
     dialogBody.querySelector("#claimThisLeaf").addEventListener("click", () => { leafDialog.close(); openPlantDialog(); });
   }
   leafDialog.showModal();
@@ -181,7 +197,7 @@ function refreshContributionPicker() {
   });
   document.getElementById("customAmountLabel")?.classList.toggle("hidden", selectedLeafAmount !== 25);
   const amount = selectedContributionAmount();
-  document.getElementById("mockCheckout").textContent = `Continue · $${amount.toLocaleString("en-CA", { maximumFractionDigits: 2 })} CAD`;
+  document.getElementById("mockCheckout").textContent = `${tr('Continue','Continuer')} · $${amount.toLocaleString(LOCALE, { maximumFractionDigits: 2 })} CAD`;
 }
 document.querySelectorAll("[data-leaf-amount]").forEach(button => {
   button.addEventListener("click", () => {
@@ -192,8 +208,14 @@ document.querySelectorAll("[data-leaf-amount]").forEach(button => {
 document.getElementById("plantAmount")?.addEventListener("input", refreshContributionPicker);
 refreshContributionPicker();
 document.getElementById("mockCheckout").addEventListener("click", event => {
+  const status = document.getElementById("plantStatus");
+  if (!IS_FR && document.getElementById("plantEnglishChoice") && !document.getElementById("plantEnglishChoice").checked) {
+    if (status) status.textContent = "Please expressly choose to proceed under the English terms after the French versions are presented.";
+    return;
+  }
+  if (status) status.textContent = "";
   const amount = selectedContributionAmount();
-  event.currentTarget.textContent = `Payment wiring comes next · $${amount.toLocaleString("en-CA", { maximumFractionDigits: 2 })}`;
+  event.currentTarget.textContent = `${tr('Payment wiring comes next','Le branchement du paiement vient ensuite')} · $${amount.toLocaleString(LOCALE, { maximumFractionDigits: 2 })}`;
   setTimeout(refreshContributionPicker, 1600);
 });
 
@@ -267,8 +289,8 @@ function hydrateCampaignLeaves(rows = []) {
     leaf.claimed = true;
     leaf.amountCents = Number(row.gross_cents || 100);
     leaf.size = leaf.baseSize * leafScaleForAmount(leaf.amountCents);
-    leaf.owner = row.display_name || "Anonymous Canadian";
-    leaf.message = row.message || "Planted on MapleWish.";
+    leaf.owner = row.display_name || tr("Anonymous Canadian","Canadien·ne anonyme");
+    leaf.message = row.message || tr("Planted on MapleWish.","Plantée sur MapleWish.");
     leaf.spriteVariant = Number(row.sprite_variant) || null;
     refreshLeafElement(leaf);
     filled += 1;
@@ -328,28 +350,50 @@ async function loadPublicData() {
   } catch { /* optional legacy contest data */ }
 }
 loadPublicData();
+
+function isQuebecProvince(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'quebec' || normalized === 'québec';
+}
+
+function refreshContestLanguageChoice() {
+  const row = document.getElementById("entryEnglishChoiceRow");
+  if (!row) return;
+  row.classList.toggle("hidden", IS_FR || !isQuebecProvince(document.getElementById("entryProvince")?.value));
+}
+document.getElementById("entryProvince")?.addEventListener("change", refreshContestLanguageChoice);
+refreshContestLanguageChoice();
+
 document.getElementById("submitEntry").addEventListener("click", async event => {
   const button = event.currentTarget;
   const status = document.getElementById("entryStatus");
   if (!document.getElementById("entryRules").checked) {
-    status.textContent = "Please confirm that you have reached the age of majority in your province or territory and accept the Official Rules.";
+    status.textContent = tr("Please confirm that you have reached the age of majority in your province or territory and accept the Official Rules.","Veuillez confirmer que vous avez atteint l’âge de la majorité dans votre province ou territoire et accepter le Règlement officiel.");
+    return;
+  }
+  const province = document.getElementById("entryProvince").value;
+  if (!IS_FR && isQuebecProvince(province) && !document.getElementById("entryEnglishChoice")?.checked) {
+    status.textContent = tr("Please expressly choose English after the French Official Rules are presented.","Veuillez choisir expressément l’anglais après la présentation du Règlement officiel en français.");
     return;
   }
   const payload = {
     name: document.getElementById("entryName").value.trim(),
     email: document.getElementById("entryEmail").value.trim(),
-    province: document.getElementById("entryProvince").value,
+    province,
     country: "CA", ageConfirmed: true, rulesAccepted: true,
+    rulesLanguage: IS_FR ? "fr-CA" : "en-CA",
+    frenchRulesPresented: true,
+    englishLanguageChoiceConfirmed: IS_FR ? false : Boolean(document.getElementById("entryEnglishChoice")?.checked),
     marketingConsent: document.getElementById("entryMarketing").checked,
     entryMethod: "free"
   };
-  button.disabled = true; status.textContent = "Submitting…";
+  button.disabled = true; status.textContent = tr("Submitting…","Envoi…");
   try {
     const response = await fetch("/api/contest/entries", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Entry could not be submitted.");
-    status.textContent = data.alreadyEntered ? "You’re already entered for this week." : "You’re in. Good luck! 🍁";
-  } catch (error) { status.textContent = error.message || "The entry service is not available yet."; }
+    if (!response.ok) throw new Error(data.error || tr("Entry could not be submitted.","L’inscription n’a pas pu être soumise."));
+    status.textContent = data.alreadyEntered ? tr("You’re already entered for this week.","Vous êtes déjà inscrit·e pour cette semaine.") : tr("You’re in. Good luck! 🍁","Votre inscription est reçue. Bonne chance! 🍁");
+  } catch (error) { status.textContent = error.message || tr("The entry service is not available yet.","Le service d’inscription n’est pas disponible pour le moment."); }
   finally { button.disabled = false; }
 });
 
@@ -361,7 +405,7 @@ function updateShareCount(increment = false) {
     localStorage.setItem(SHARE_COUNT_KEY, String(count));
   }
   const node = document.getElementById("shareClicks");
-  if (node) node.textContent = count.toLocaleString("en-CA");
+  if (node) node.textContent = count.toLocaleString(LOCALE);
 }
 function showShareToast(message) {
   let toast = document.querySelector(".share-toast");
@@ -379,9 +423,9 @@ async function copyShareLink(channel = "copy") {
   const url = shareUrl(channel);
   try {
     await navigator.clipboard.writeText(url);
-    showShareToast("Trackable share link copied");
+    showShareToast(tr("Trackable share link copied","Lien de partage traçable copié"));
   } catch {
-    window.prompt("Copy this link:", url);
+    window.prompt(tr("Copy this link:","Copiez ce lien :"), url);
   }
 }
 
@@ -390,7 +434,7 @@ async function handleShare(channel) {
   recordShareEvent('share_start', channel);
   const url = shareUrl(channel);
   const title = "MapleWish";
-  const text = "Small leaf. Big change. Help this maple tree reach one more Canadian.";
+  const text = tr("Small leaf. Big change. Help this maple tree reach one more Canadian.","Petite feuille. Grand changement. Aidez cet érable à rejoindre une autre personne au Canada.");
   if (channel === "native") {
     if (navigator.share) {
       try { await navigator.share({ title, text, url }); return; }
