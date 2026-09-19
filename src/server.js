@@ -10,12 +10,14 @@ import sharp from 'sharp';
 import { rateLimit } from 'express-rate-limit';
 import { pool, dbHealth, withTransaction } from './db.js';
 import { emailDeliveryConfigured, sendPasswordChangedEmail, sendPasswordResetEmail, sendVerificationEmail } from './mailer.js';
-import { applicantCredentialsSchema, applicantEmailSchema, contestEntrySchema, helpApplicationDraftSchema, helpApplicationSchema, mockPurchaseSchema, passwordResetSchema } from './schemas.js';
+import { applicantCredentialsSchema, applicantEmailSchema, contactRequestSchema, contestEntrySchema, helpApplicationDraftSchema, helpApplicationSchema, mockPurchaseSchema, passwordResetSchema } from './schemas.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const bindAddress = process.env.BIND_ADDRESS || '0.0.0.0';
-const rulesVersion = process.env.RULES_VERSION || 'prototype-0.1';
+const rulesVersion = process.env.RULES_VERSION || 'giveaway-rules-2026-09-19';
+const applicantPrivacyVersion = 'applicant-privacy-2026-09-19';
+const applicationTermsVersion = 'application-terms-2026-09-19';
 const identitySecret = process.env.IDENTITY_HASH_SECRET || 'development-only-change-me';
 const applicantCookie = 'maplewish_applicant';
 const applicantSessionDays = Math.max(1, Number(process.env.APPLICANT_SESSION_DAYS || 30));
@@ -33,12 +35,16 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '64kb' }));
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100 }));
 app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(repoRoot, 'index.html')));
-app.get('/rules.html', (_req, res) => res.sendFile(path.join(repoRoot, 'rules.html')));
+for (const legalPage of ['rules','privacy','terms','contribution-terms','refunds','applicant-privacy','application-terms','story-consent']) {
+  app.get(`/${legalPage}.html`, (_req, res) => res.sendFile(path.join(repoRoot, `${legalPage}.html`)));
+}
 app.get('/apply.html', (_req, res) => res.sendFile(path.join(repoRoot, 'apply.html')));
 app.get('/reset-password.html', (_req, res) => res.sendFile(path.join(repoRoot, 'reset-password.html')));
+app.get('/contact.html', (_req, res) => res.sendFile(path.join(repoRoot, 'contact.html')));
 app.get('/app.js', (_req, res) => res.sendFile(path.join(repoRoot, 'app.js')));
 app.get('/apply.js', (_req, res) => res.sendFile(path.join(repoRoot, 'apply.js')));
 app.get('/reset-password.js', (_req, res) => res.sendFile(path.join(repoRoot, 'reset-password.js')));
+app.get('/contact.js', (_req, res) => res.sendFile(path.join(repoRoot, 'contact.js')));
 app.get('/leaf-layout.js', (_req, res) => res.sendFile(path.join(repoRoot, 'leaf-layout.js')));
 app.get('/styles.css', (_req, res) => res.sendFile(path.join(repoRoot, 'styles.css')));
 app.use('/img/web', express.static(path.join(repoRoot, 'img', 'web'), { maxAge: '1h', immutable: false }));
@@ -129,6 +135,7 @@ function requireSameOrigin(req, res, next) {
 
 const applicantAuthLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 });
 const applicantEmailLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 8 });
+const contactLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 10 });
 
 async function issueApplicantAuthToken(accountId, purpose, ttlMs) {
   const token = crypto.randomBytes(32).toString('base64url');
@@ -268,6 +275,17 @@ app.get('/api/impact', async (_req, res, next) => {
   } catch (error) { next(error); }
 });
 
+app.post('/api/contact', contactLimiter, requireSameOrigin, async (req, res, next) => {
+  try {
+    const item = contactRequestSchema.parse(req.body);
+    const result = await pool.query(`INSERT INTO contact_requests(category,name,email,message)
+      VALUES ($1,$2,$3,$4) RETURNING id`, [
+        item.category, item.name || null, item.email.toLowerCase(), item.message,
+      ]);
+    res.status(201).json({ submitted: true, reference: result.rows[0].id });
+  } catch (error) { next(error); }
+});
+
 function applicationsOpen() {
   return process.env.ENABLE_HELP_APPLICATIONS === 'true';
 }
@@ -276,7 +294,12 @@ async function applicantApplication(accountId) {
   const result = await pool.query(`SELECT id,status,applicant_name,province,city,preferred_contact,phone,
     request_category,request_summary,requested_cents,private_story,public_story_draft,
     public_identity_preference,public_alias,open_to_public_story,eligibility_confirmed,
-    accuracy_confirmed,privacy_acknowledged,submitted_at,updated_at,created_at,
+    accuracy_confirmed,privacy_acknowledged,
+    (applicant_privacy_acknowledged_at IS NOT NULL) AS applicant_privacy_accepted,
+    applicant_privacy_version,
+    (application_terms_accepted_at IS NOT NULL) AS application_terms_accepted,
+    application_terms_version,
+    submitted_at,updated_at,created_at,
     (photo_storage_key IS NOT NULL) AS has_photo
     FROM assistance_cases WHERE account_id=$1
     ORDER BY created_at DESC LIMIT 1`, [accountId]);
@@ -482,21 +505,34 @@ app.put('/api/help/application', requireApplicant, requireSameOrigin, async (req
       req.applicant.account_id,
     ];
 
+    let caseId;
     if (existing) {
-      await pool.query(`UPDATE assistance_cases SET
+      const result = await pool.query(`UPDATE assistance_cases SET
         applicant_name=$1,applicant_email=$2,province=$3,city=$4,preferred_contact=$5,phone=$6,
         request_category=$7,request_summary=$8,requested_cents=$9,private_story=$10,
         public_story_draft=$11,public_identity_preference=$12,public_alias=$13,
         open_to_public_story=$14,eligibility_confirmed=$15,accuracy_confirmed=$16,
-        privacy_acknowledged=$17,updated_at=now()
-        WHERE id=$18`, [...values.slice(0,17), existing.id]);
+        privacy_acknowledged=(privacy_acknowledged OR $17),updated_at=now()
+        WHERE id=$18 RETURNING id`, [...values.slice(0,17), existing.id]);
+      caseId = result.rows[0].id;
     } else {
-      await pool.query(`INSERT INTO assistance_cases
+      const result = await pool.query(`INSERT INTO assistance_cases
         (status,applicant_name,applicant_email,province,city,preferred_contact,phone,
          request_category,request_summary,requested_cents,private_story,public_story_draft,
          public_identity_preference,public_alias,open_to_public_story,eligibility_confirmed,
          accuracy_confirmed,privacy_acknowledged,account_id)
-        VALUES ('draft',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`, values);
+        VALUES ('draft',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+        RETURNING id`, values);
+      caseId = result.rows[0].id;
+    }
+
+    if (item.privacyAcknowledged || item.applicationTermsAccepted) {
+      await pool.query(`UPDATE assistance_cases SET
+        applicant_privacy_acknowledged_at=CASE WHEN $2 THEN now() ELSE applicant_privacy_acknowledged_at END,
+        applicant_privacy_version=CASE WHEN $2 THEN $3 ELSE applicant_privacy_version END,
+        application_terms_accepted_at=CASE WHEN $4 THEN now() ELSE application_terms_accepted_at END,
+        application_terms_version=CASE WHEN $4 THEN $5 ELSE application_terms_version END
+        WHERE id=$1`, [caseId, item.privacyAcknowledged, applicantPrivacyVersion, item.applicationTermsAccepted, applicationTermsVersion]);
     }
     res.json({ saved: true, application: await applicantApplication(req.applicant.account_id) });
   } catch (error) { next(error); }
@@ -528,7 +564,8 @@ app.post('/api/help/application/submit', requireApplicant, requireSameOrigin, as
       openToPublicStory: Boolean(current.open_to_public_story),
       eligibilityConfirmed: Boolean(current.eligibility_confirmed),
       accuracyConfirmed: Boolean(current.accuracy_confirmed),
-      privacyAcknowledged: Boolean(current.privacy_acknowledged),
+      privacyAcknowledged: Boolean(current.applicant_privacy_accepted && current.applicant_privacy_version === applicantPrivacyVersion),
+      applicationTermsAccepted: Boolean(current.application_terms_accepted && current.application_terms_version === applicationTermsVersion),
     });
     if ((complete.preferredContact === 'phone' || complete.preferredContact === 'either') && complete.phone.length < 7) {
       return res.status(400).json({ error: 'Add a phone number for the contact method you selected.' });
@@ -536,7 +573,8 @@ app.post('/api/help/application/submit', requireApplicant, requireSameOrigin, as
     if (complete.publicIdentityPreference === 'pseudonym' && complete.publicAlias.length < 2) {
       return res.status(400).json({ error: 'Add the pseudonym you would want us to use.' });
     }
-    if (!complete.eligibilityConfirmed || !complete.accuracyConfirmed || !complete.privacyAcknowledged) {
+    if (!complete.eligibilityConfirmed || !complete.accuracyConfirmed ||
+        !complete.privacyAcknowledged || !complete.applicationTermsAccepted) {
       return res.status(400).json({ error: 'Please complete the required confirmations before submitting.' });
     }
     await pool.query(`UPDATE assistance_cases SET status='submitted',

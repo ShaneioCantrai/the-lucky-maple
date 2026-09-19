@@ -156,6 +156,25 @@ app.post('/api/campaigns/:id/pause', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+app.get('/api/contact-requests', async (_req, res, next) => {
+  try {
+    const result = await pool.query(`SELECT id,category,name,email,message,status,created_at,updated_at
+      FROM contact_requests ORDER BY (status='closed') ASC, created_at DESC LIMIT 250`);
+    res.json({ requests: result.rows });
+  } catch (error) { next(error); }
+});
+
+app.patch('/api/contact-requests/:id/status', async (req, res, next) => {
+  try {
+    const status = String(req.body?.status || '');
+    if (!['new','reviewing','closed'].includes(status)) return res.status(400).json({ error: 'Invalid contact-request status.' });
+    const result = await pool.query(`UPDATE contact_requests SET status=$1,updated_at=now()
+      WHERE id=$2 RETURNING id,status`, [status, req.params.id]);
+    if (!result.rows[0]) return res.status(404).json({ error: 'Contact request not found.' });
+    res.json({ request: result.rows[0] });
+  } catch (error) { next(error); }
+});
+
 app.get('/api/cases', async (_req, res, next) => {
   try {
     const result = await pool.query(`SELECT id,status,applicant_name,province,city,request_category,
@@ -173,8 +192,10 @@ app.get('/api/cases/:id', async (req, res, next) => {
       pool.query(`SELECT id,status,applicant_name,applicant_email,province,city,preferred_contact,phone,
         request_category,request_summary,requested_cents,private_story,public_story_draft,
         public_identity_preference,public_alias,open_to_public_story,story_consent,
-        eligibility_confirmed,accuracy_confirmed,privacy_acknowledged,submitted_at,reviewed_at,
-        updated_at,created_at,(photo_storage_key IS NOT NULL) AS has_photo
+        eligibility_confirmed,accuracy_confirmed,privacy_acknowledged,
+        applicant_privacy_acknowledged_at,applicant_privacy_version,
+        application_terms_accepted_at,application_terms_version,
+        submitted_at,reviewed_at,updated_at,created_at,(photo_storage_key IS NOT NULL) AS has_photo
         FROM assistance_cases WHERE id=$1`, [req.params.id]),
       pool.query(`SELECT id,note_text,actor,created_at FROM assistance_case_notes
         WHERE case_id=$1 ORDER BY created_at DESC`, [req.params.id]),

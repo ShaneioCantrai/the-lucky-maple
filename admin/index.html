@@ -41,10 +41,10 @@
       <article class="panel">
         <span class="eyebrow">SAFETY CHECK</span><h2>Before a tree goes live</h2>
         <div class="check-row">✓ Identity / need verified</div>
-        <div class="check-row">✓ Recipient approved public story</div>
+        <div class="check-row">✓ Recipient approved the exact public name, story and photo (if any)</div>
         <div class="check-row">✓ Goal tied to a specific documented need</div>
         <div class="check-row">✓ Payment path and outcome proof ready</div>
-        <p class="muted">The backend refuses to activate a campaign until verification and story consent are recorded.</p>
+        <p class="muted">The backend refuses to activate a campaign until verification and publication approval are recorded. Keep evidence of the recipient's exact approval in the case record.</p>
       </article>
     </section>
 
@@ -59,7 +59,7 @@
         <label class="wide">Short public story<textarea name="summary" required rows="4" placeholder="What happened, what is needed, and what changes when the goal is reached."></textarea></label>
         <label>Goal (CAD)<input name="goal" required type="number" min="1" step="1" placeholder="650" /></label>
         <label class="check"><input name="verified" type="checkbox" /> Need verified</label>
-        <label class="check"><input name="storyConsent" type="checkbox" /> Recipient approved public story</label>
+        <label class="check"><input name="storyConsent" type="checkbox" /> Recipient approved the exact public content</label>
         <div class="wide form-actions"><button class="button primary" type="submit">Create draft tree</button><span id="formStatus"></span></div>
       </form>
     </section>
@@ -78,6 +78,11 @@
         </div>
         <div id="caseDetailBody"></div>
       </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading"><div><span class="eyebrow">CONTACT / PRIVACY INBOX</span><h2>Messages</h2></div><span class="muted">Public contact form submissions</span></div>
+      <div class="table-wrap"><table><thead><tr><th>Type</th><th>From</th><th>Message</th><th>Status</th><th></th></tr></thead><tbody id="contactRows"></tbody></table></div>
     </section>
 
     <footer>Private administrative interface · not intended for public internet exposure.</footer>

@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head>
+<meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Contact MapleWish</title><link rel="stylesheet" href="/styles.css" /></head>
+<body class="legal-page"><header class="legal-topbar">
+<a class="brand" href="/"><span class="brand-leaf">🍁</span><span><b>MapleWish</b><small>Contact & Privacy Requests</small></span></a>
+<a class="button ghost" href="/">← Back to the tree</a></header>
+<main class="legal-shell"><article class="legal-card">
+<span class="eyebrow">CONTACT MAPLEWISH</span><h1>How can we help?</h1>
+<p>Use this form for privacy requests, account/support questions, giveaway questions, legal notices or another MapleWish matter. Messages are delivered to the private MapleWish operations inbox.</p>
+<form id="contactForm" class="application-form">
+<fieldset><legend>Your message</legend><div class="form-grid">
+<label>Topic<select name="category" required><option value="support">Support</option><option value="privacy">Privacy request</option><option value="contest">Giveaway / contest</option><option value="legal">Legal notice</option><option value="other">Other</option></select></label>
+<label>Name <span class="optional">optional</span><input name="name" maxlength="120" /></label>
+<label class="wide">Email<input name="email" type="email" maxlength="254" required /></label>
+<label class="wide">Message<textarea name="message" maxlength="5000" rows="8" required placeholder="Tell us what you need help with. Please do not include passwords or full payment-card numbers."></textarea></label>
+</div></fieldset>
+<fieldset><legend>Privacy</legend>
+<label class="check"><input name="privacyAcknowledged" type="checkbox" required /> I understand MapleWish will use this information to respond to my request under the <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>.</label>
+</fieldset>
+<div class="application-actions"><button class="button primary" type="submit">Send message</button></div>
+<p id="contactStatus" class="form-status" aria-live="polite"></p>
+</form>
+<nav class="legal-nav"><a href="/privacy.html">Privacy Policy</a><a href="/terms.html">Terms</a><a href="/rules.html">Official Rules</a><a href="/apply.html">Apply for Help</a></nav>
+</article></main>
+<footer class="legal-footer"><nav><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/contribution-terms.html">Contribution Terms</a><a href="/refunds.html">Refunds</a><a href="/rules.html">Official Rules</a><a href="/contact.html">Contact</a></nav><p>© MapleWish · Operated by Maple Vibe Inc.</p></footer>
+<script type="module" src="/contact.js"></script>
+</body></html>

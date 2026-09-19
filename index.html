@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#f8f1df" />
   <title>MapleWish</title>
-  <meta name="description" content="Plant a $1 leaf on MapleWish. 50¢ from every leaf directly helps neurodivergent Canadians. Canada-only weekly giveaway; no purchase necessary." />
+  <meta name="description" content="Plant a leaf on MapleWish. 50% of every paid leaf goes to direct help for neurodivergent Canadians. Canada-only weekly giveaway; no purchase necessary." />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -82,7 +82,7 @@
 
       <section class="hero-steps" id="how" aria-label="How MapleWish works">
         <div><span class="step-icon">🍁</span><p><b>1. Plant a leaf.</b><small>Pick a leaf and put your name on it for $1.</small></p></div>
-        <div><span class="step-icon">❤</span><p><b>2. Support real impact.</b><small>50¢ from every leaf directly helps neurodivergent Canadians.</small></p></div>
+        <div><span class="step-icon">❤</span><p><b>2. Support real impact.</b><small>50% of every paid leaf goes to direct help for neurodivergent Canadians.</small></p></div>
         <div><span class="step-icon">🏆</span><p><b>3. Get lucky.</b><small>Canadian residents can enter the weekly giveaway free.</small></p></div>
       </section>
     </section>
@@ -148,9 +148,9 @@
     </section>
 
     <footer id="winners">
-      <span>© MapleWish</span>
-      <nav><a href="rules.html">Official Rules</a><a href="#" data-open="free-entry">Free Entry</a><a href="#how">How it works</a></nav>
-      <small>Canada-only giveaway. 18+. No purchase necessary. Skill-testing question required. Prize funded separately by MapleWish and/or sponsors.</small>
+      <span>© MapleWish · Operated by Maple Vibe Inc.</span>
+      <nav><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/contribution-terms.html">Contribution Terms</a><a href="/refunds.html">Refunds</a><a href="/rules.html">Official Rules</a><a href="#" data-open="free-entry">Free Entry</a><a href="/apply.html">Apply for Help</a><a href="/contact.html">Contact</a></nav>
+      <small>Canada-only giveaway. Age of majority. No purchase necessary. Skill-testing question required. Prize funded separately by MapleWish and/or sponsors.</small>
     </footer>
   </main>
   <dialog id="leafDialog" class="modal">
@@ -199,7 +199,7 @@
     <label>Leaf message<input id="plantMessage" maxlength="60" placeholder="I can't believe I bought this." /></label>
     <label>Email for receipt & recovery<input id="plantEmail" type="email" placeholder="you@example.com" /></label>
     <button class="button primary full" id="mockCheckout">Continue · $1 CAD</button>
-    <small>One contribution plants one leaf. $25 and above uses the largest leaf size. Payments are not connected in this prototype yet.</small>
+    <small>One contribution plants one leaf. $25 and above uses the largest leaf size. By continuing, you agree to the <a href="/contribution-terms.html" target="_blank" rel="noopener">Contribution Terms</a> and <a href="/terms.html" target="_blank" rel="noopener">Terms of Use</a>. See the <a href="/refunds.html" target="_blank" rel="noopener">Refund Policy</a>. Payments are not connected in this prototype yet.</small>
   </dialog>
 
   <dialog id="freeEntryDialog" class="modal">
@@ -209,7 +209,7 @@
     <label>Name<input id="entryName" maxlength="60" placeholder="Your name" /></label>
     <label>Email<input id="entryEmail" type="email" placeholder="you@example.com" /></label>
     <label>Province / territory<select id="entryProvince"><option>Ontario</option><option>Alberta</option><option>British Columbia</option><option>Quebec</option><option>Manitoba</option><option>Saskatchewan</option><option>Nova Scotia</option><option>New Brunswick</option><option>Newfoundland and Labrador</option><option>Prince Edward Island</option><option>Northwest Territories</option><option>Nunavut</option><option>Yukon</option></select></label>
-    <label class="check"><input id="entryRules" type="checkbox" /> I am 18+ and agree to the Official Rules.</label>
+    <label class="check"><input id="entryRules" type="checkbox" /> I have reached the age of majority in my province or territory and agree to the <a href="/rules.html" target="_blank" rel="noopener">Official Rules</a>.</label>
     <label class="check"><input id="entryMarketing" type="checkbox" /> Email me future Leaf Drops and MapleWish news. <em>Optional.</em></label>
     <button class="button primary full" id="submitEntry">Enter this week's draw</button>
     <small>Buying a leaf does not improve your odds. Skill-testing question required if selected.</small>

@@ -26,6 +26,14 @@ export const passwordResetSchema = z.object({
   password: z.string().min(10).max(128),
 });
 
+export const contactRequestSchema = z.object({
+  category: z.enum(['privacy','support','contest','legal','other']),
+  name: z.string().trim().max(120).optional().default(''),
+  email: z.string().trim().email().max(254),
+  message: z.string().trim().min(10).max(5000),
+  privacyAcknowledged: z.literal(true),
+});
+
 export const helpApplicationSchema = z.object({
   name: z.string().trim().min(2).max(120),
   province: z.string().trim().min(2).max(40),
@@ -43,6 +51,7 @@ export const helpApplicationSchema = z.object({
   eligibilityConfirmed: z.boolean().default(false),
   accuracyConfirmed: z.boolean().default(false),
   privacyAcknowledged: z.boolean().default(false),
+  applicationTermsAccepted: z.boolean().default(false),
 });
 
 export const helpApplicationDraftSchema = z.object({
@@ -62,6 +71,7 @@ export const helpApplicationDraftSchema = z.object({
   eligibilityConfirmed: z.boolean().default(false),
   accuracyConfirmed: z.boolean().default(false),
   privacyAcknowledged: z.boolean().default(false),
+  applicationTermsAccepted: z.boolean().default(false),
 });
 
 export const mockPurchaseSchema = z.object({

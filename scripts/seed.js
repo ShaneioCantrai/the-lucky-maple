@@ -16,14 +16,14 @@ if (!current.rows[0]) {
   const opens = new Date();
   const closes = new Date(opens.getTime() + 7 * 24 * 60 * 60 * 1000);
   const draw = new Date(closes.getTime() + 12 * 60 * 60 * 1000);
-  const label = `Prototype week ${opens.toISOString().slice(0, 10)}`;
+  const label = `MapleWish weekly draw ${opens.toISOString().slice(0, 10)}`;
   await pool.query(
     `INSERT INTO contest_weeks
      (label, opens_at, closes_at, draw_at, prize_cents, status,
       funding_source, rules_version)
      VALUES ($1,$2,$3,$4,10000,'open',$5,$6)`,
-    [label, opens, closes, draw, 'Founder-funded prototype',
-     process.env.RULES_VERSION || 'prototype-0.1']);
+    [label, opens, closes, draw, 'Funded separately by MapleWish and/or an identified sponsor',
+     process.env.RULES_VERSION || 'giveaway-rules-2026-09-19']);
   console.log(`Created ${label}`);
 } else {
   console.log('Open contest already exists.');

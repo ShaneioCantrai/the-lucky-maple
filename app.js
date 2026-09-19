@@ -332,7 +332,7 @@ document.getElementById("submitEntry").addEventListener("click", async event => 
   const button = event.currentTarget;
   const status = document.getElementById("entryStatus");
   if (!document.getElementById("entryRules").checked) {
-    status.textContent = "Please confirm that you are 18+ and accept the Official Rules.";
+    status.textContent = "Please confirm that you have reached the age of majority in your province or territory and accept the Official Rules.";
     return;
   }
   const payload = {

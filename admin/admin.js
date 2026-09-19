@@ -45,7 +45,7 @@ function renderCampaigns(campaigns) {
     } else {
       action = [
         c.verification_status !== 'verified' ? `<button class="button small ghost" data-verify="${c.id}">Mark verified</button>` : '',
-        !c.story_consent ? `<button class="button small ghost" data-story-consent="${c.id}">Story approved</button>` : '',
+        !c.story_consent ? `<button class="button small ghost" data-story-consent="${c.id}">Record recipient approval</button>` : '',
       ].filter(Boolean).join(' ');
     }
     return `<tr>
@@ -64,6 +64,18 @@ function renderCases(cases) {
     <td>${money(item.requested_cents)}</td><td><span class="status ${escapeHtml(item.status)}">${escapeHtml(item.status.replaceAll('_',' '))}</span></td>
     <td><button class="button small ghost" data-case="${item.id}">Review</button></td>
   </tr>`).join('') : '<tr><td colspan="6">No help requests yet.</td></tr>';
+}
+
+function renderContacts(requests) {
+  $('contactRows').innerHTML = requests.length ? requests.map(item => `<tr>
+    <td><span class="status ${escapeHtml(item.status)}">${escapeHtml(item.category)}</span><small>${escapeHtml(new Date(item.created_at).toLocaleString('en-CA'))}</small></td>
+    <td><strong>${escapeHtml(item.name || 'No name')}</strong><small>${escapeHtml(item.email)}</small></td>
+    <td><details><summary>View message</summary><p class="contact-message">${escapeHtml(item.message)}</p></details></td>
+    <td>${escapeHtml(item.status)}</td>
+    <td>${item.status !== 'closed'
+      ? `<button class="button small ghost" data-contact-status="${item.id}" data-next-status="${item.status === 'new' ? 'reviewing' : 'closed'}">${item.status === 'new' ? 'Reviewing' : 'Close'}</button>`
+      : ''}</td>
+  </tr>`).join('') : '<tr><td colspan="5">No contact requests yet.</td></tr>';
 }
 
 function renderCaseDetail(data) {
@@ -92,6 +104,7 @@ function renderCaseDetail(data) {
         ${item.has_photo ? `<img class="case-photo" src="/api/cases/${item.id}/photo?v=${Date.now()}" alt="Private applicant upload" />` : '<div class="case-photo empty">No photo</div>'}
         <div class="case-block"><b>Contact</b><p>${escapeHtml(item.applicant_email)}<br>${escapeHtml(item.phone || 'No phone')} · prefers ${escapeHtml(item.preferred_contact)}</p></div>
         <div class="case-block"><b>Public-sharing preference</b><p>${escapeHtml(item.public_identity_preference.replaceAll('_',' '))}${item.public_alias ? ' · ' + escapeHtml(item.public_alias) : ''}<br>${item.open_to_public_story ? 'Open to discussing a public story' : 'Did not opt into discussing a public story yet'}</p></div>
+        <div class="case-block"><span class="eyebrow">LEGAL ACKNOWLEDGEMENTS</span><p>Applicant Privacy Notice: ${item.applicant_privacy_acknowledged_at ? '✓ ' + escapeHtml(item.applicant_privacy_version || '') : 'not recorded'}<br>Application Terms: ${item.application_terms_accepted_at ? '✓ ' + escapeHtml(item.application_terms_version || '') : 'not recorded'}</p></div>
       </div>
       <div>
         <div class="case-block"><span class="eyebrow">SPECIFIC NEED</span><h3>${money(item.requested_cents)} · ${escapeHtml(item.request_category)}</h3><p>${escapeHtml(item.request_summary)}</p></div>
@@ -111,8 +124,8 @@ async function openCase(id) {
 }
 
 async function load() {
-  const [overview, campaigns, cases] = await Promise.all([
-    api('/api/overview'), api('/api/campaigns'), api('/api/cases')
+  const [overview, campaigns, cases, contacts] = await Promise.all([
+    api('/api/overview'), api('/api/campaigns'), api('/api/cases'), api('/api/contact-requests')
   ]);
   renderCurrent(overview.current);
   $('todayGross').textContent = money(overview.today.grossCents);
@@ -121,6 +134,7 @@ async function load() {
   $('openCases').textContent = overview.today.openCases.toLocaleString('en-CA');
   renderCampaigns(campaigns.campaigns);
   renderCases(cases.cases);
+  renderContacts(contacts.requests);
 }
 
 $('campaignForm').addEventListener('submit', async event => {
@@ -166,6 +180,20 @@ document.addEventListener('click', async event => {
       await openCase(saveCaseStatus.dataset.saveCaseStatus);
     } catch (error) { alert(error.message); }
     finally { saveCaseStatus.disabled = false; }
+    return;
+  }
+
+  const contactStatus = event.target.closest('[data-contact-status]');
+  if (contactStatus) {
+    contactStatus.disabled = true;
+    try {
+      await api(`/api/contact-requests/${contactStatus.dataset.contactStatus}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: contactStatus.dataset.nextStatus }),
+      });
+      await load();
+    } catch (error) { alert(error.message); }
+    finally { contactStatus.disabled = false; }
     return;
   }
 

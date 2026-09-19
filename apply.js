@@ -108,7 +108,8 @@ function fillForm(application) {
   setFormValue('openToPublicStory', application.open_to_public_story);
   setFormValue('eligibilityConfirmed', application.eligibility_confirmed);
   setFormValue('accuracyConfirmed', application.accuracy_confirmed);
-  setFormValue('privacyAcknowledged', application.privacy_acknowledged);
+  setFormValue('privacyAcknowledged', application.applicant_privacy_accepted || application.privacy_acknowledged);
+  setFormValue('applicationTermsAccepted', application.application_terms_accepted);
 }
 function payloadFromForm() {
   const form = new FormData(applicationForm);
@@ -129,6 +130,7 @@ function payloadFromForm() {
     eligibilityConfirmed: form.get('eligibilityConfirmed') === 'on',
     accuracyConfirmed: form.get('accuracyConfirmed') === 'on',
     privacyAcknowledged: form.get('privacyAcknowledged') === 'on',
+    applicationTermsAccepted: form.get('applicationTermsAccepted') === 'on',
   };
 }
 function renderVerification(data) {
