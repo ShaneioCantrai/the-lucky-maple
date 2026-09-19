@@ -1,18 +1,24 @@
 import 'dotenv/config';
 import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import helmet from 'helmet';
+import multer from 'multer';
+import sharp from 'sharp';
 import { rateLimit } from 'express-rate-limit';
 import { pool, dbHealth, withTransaction } from './db.js';
-import { contestEntrySchema, helpApplicationSchema, mockPurchaseSchema } from './schemas.js';
+import { applicantCredentialsSchema, contestEntrySchema, helpApplicationSchema, mockPurchaseSchema } from './schemas.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const bindAddress = process.env.BIND_ADDRESS || '0.0.0.0';
 const rulesVersion = process.env.RULES_VERSION || 'prototype-0.1';
 const identitySecret = process.env.IDENTITY_HASH_SECRET || 'development-only-change-me';
+const applicantCookie = 'maplewish_applicant';
+const applicantSessionDays = Math.max(1, Number(process.env.APPLICANT_SESSION_DAYS || 30));
+const privateUploadDir = process.env.PRIVATE_UPLOAD_DIR || '/var/lib/maplewish/private-uploads';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
 
@@ -26,7 +32,9 @@ app.use(express.json({ limit: '64kb' }));
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100 }));
 app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(repoRoot, 'index.html')));
 app.get('/rules.html', (_req, res) => res.sendFile(path.join(repoRoot, 'rules.html')));
+app.get('/apply.html', (_req, res) => res.sendFile(path.join(repoRoot, 'apply.html')));
 app.get('/app.js', (_req, res) => res.sendFile(path.join(repoRoot, 'app.js')));
+app.get('/apply.js', (_req, res) => res.sendFile(path.join(repoRoot, 'apply.js')));
 app.get('/leaf-layout.js', (_req, res) => res.sendFile(path.join(repoRoot, 'leaf-layout.js')));
 app.get('/styles.css', (_req, res) => res.sendFile(path.join(repoRoot, 'styles.css')));
 app.use('/img/web', express.static(path.join(repoRoot, 'img', 'web'), { maxAge: '1h', immutable: false }));
@@ -36,6 +44,93 @@ function identityHash(email) {
     .update(email.trim().toLowerCase())
     .digest('hex');
 }
+
+function parseCookies(req) {
+  const out = {};
+  for (const pair of String(req.headers.cookie || '').split(';')) {
+    const index = pair.indexOf('=');
+    if (index < 1) continue;
+    out[pair.slice(0, index).trim()] = decodeURIComponent(pair.slice(index + 1).trim());
+  }
+  return out;
+}
+
+function sha256(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
+
+function derivePassword(password, salt) {
+  return new Promise((resolve, reject) => {
+    crypto.scrypt(password, salt, 64, { N: 16384, r: 8, p: 1 }, (error, key) => {
+      if (error) reject(error); else resolve(key);
+    });
+  });
+}
+
+async function makePasswordRecord(password) {
+  const salt = crypto.randomBytes(16).toString('base64url');
+  const hash = await derivePassword(password, salt);
+  return { salt, hash: hash.toString('base64url') };
+}
+
+async function passwordMatches(password, salt, expected) {
+  const actual = await derivePassword(password, salt);
+  const wanted = Buffer.from(expected, 'base64url');
+  return actual.length === wanted.length && crypto.timingSafeEqual(actual, wanted);
+}
+
+function setApplicantCookie(res, token, expiresAt) {
+  res.cookie(applicantCookie, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    expires: expiresAt,
+  });
+}
+
+async function createApplicantSession(accountId, res) {
+  const token = crypto.randomBytes(32).toString('base64url');
+  const expiresAt = new Date(Date.now() + applicantSessionDays * 86400000);
+  await pool.query(`INSERT INTO applicant_sessions (account_id,token_hash,expires_at)
+    VALUES ($1,$2,$3)`, [accountId, sha256(token), expiresAt]);
+  setApplicantCookie(res, token, expiresAt);
+}
+
+async function requireApplicant(req, res, next) {
+  try {
+    const token = parseCookies(req)[applicantCookie];
+    if (!token) return res.status(401).json({ error: 'Sign in to continue.' });
+    const result = await pool.query(`SELECT s.id AS session_id,s.account_id,a.email
+      FROM applicant_sessions s JOIN applicant_accounts a ON a.id=s.account_id
+      WHERE s.token_hash=$1 AND s.expires_at>now() LIMIT 1`, [sha256(token)]);
+    if (!result.rows[0]) {
+      res.clearCookie(applicantCookie, { path: '/' });
+      return res.status(401).json({ error: 'Your session has expired. Please sign in again.' });
+    }
+    req.applicant = result.rows[0];
+    await pool.query('UPDATE applicant_sessions SET last_seen_at=now() WHERE id=$1', [req.applicant.session_id]);
+    next();
+  } catch (error) { next(error); }
+}
+
+function requireSameOrigin(req, res, next) {
+  const origin = req.get('origin');
+  if (!origin) return next();
+  try {
+    if (new URL(origin).host === req.get('host')) return next();
+  } catch {}
+  return res.status(403).json({ error: 'Cross-site request rejected.' });
+}
+
+const applicantAuthLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 });
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 6 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, callback) => {
+    callback(null, ['image/jpeg','image/png','image/webp'].includes(file.mimetype));
+  },
+});
 
 app.get('/api/health', async (_req, res, next) => {
   try {
@@ -150,21 +245,192 @@ app.get('/api/impact', async (_req, res, next) => {
   } catch (error) { next(error); }
 });
 
-app.post('/api/help/applications', async (req, res, next) => {
+function applicationsOpen() {
+  return process.env.ENABLE_HELP_APPLICATIONS === 'true';
+}
+
+async function applicantApplication(accountId) {
+  const result = await pool.query(`SELECT id,status,applicant_name,province,city,preferred_contact,phone,
+    request_category,request_summary,requested_cents,private_story,public_story_draft,
+    public_identity_preference,public_alias,open_to_public_story,eligibility_confirmed,
+    accuracy_confirmed,privacy_acknowledged,submitted_at,updated_at,created_at,
+    (photo_storage_key IS NOT NULL) AS has_photo
+    FROM assistance_cases WHERE account_id=$1
+    ORDER BY created_at DESC LIMIT 1`, [accountId]);
+  return result.rows[0] || null;
+}
+
+app.post('/api/help/auth/register', applicantAuthLimiter, requireSameOrigin, async (req, res, next) => {
   try {
-    if (process.env.ENABLE_HELP_APPLICATIONS !== 'true') {
-      return res.status(503).json({ error: 'Applications are not open yet.' });
+    if (!applicationsOpen()) return res.status(503).json({ error: 'Applications are not open yet.' });
+    const credentials = applicantCredentialsSchema.parse(req.body);
+    const record = await makePasswordRecord(credentials.password);
+    let account;
+    try {
+      const result = await pool.query(`INSERT INTO applicant_accounts (email,password_salt,password_hash,last_login_at)
+        VALUES ($1,$2,$3,now()) RETURNING id,email`,
+        [credentials.email.toLowerCase(), record.salt, record.hash]);
+      account = result.rows[0];
+    } catch (error) {
+      if (error.code === '23505') return res.status(409).json({ error: 'An account already exists for that email.' });
+      throw error;
     }
+    await createApplicantSession(account.id, res);
+    await pool.query(`INSERT INTO audit_log(actor_type,actor_id,event_type,entity_type,entity_id)
+      VALUES ('applicant',$1,'applicant_registered','applicant_account',$1)`, [account.id]);
+    res.status(201).json({ signedIn: true, email: account.email, application: null });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/help/auth/login', applicantAuthLimiter, requireSameOrigin, async (req, res, next) => {
+  try {
+    const credentials = applicantCredentialsSchema.parse(req.body);
+    const result = await pool.query(`SELECT id,email,password_salt,password_hash
+      FROM applicant_accounts WHERE lower(email)=lower($1) LIMIT 1`, [credentials.email]);
+    const account = result.rows[0];
+    if (!account) {
+      await derivePassword(credentials.password, 'maplewish-invalid-account');
+      return res.status(401).json({ error: 'Email or password is incorrect.' });
+    }
+    if (!(await passwordMatches(credentials.password, account.password_salt, account.password_hash))) {
+      return res.status(401).json({ error: 'Email or password is incorrect.' });
+    }
+    await pool.query('DELETE FROM applicant_sessions WHERE expires_at<=now()');
+    await pool.query('UPDATE applicant_accounts SET last_login_at=now() WHERE id=$1', [account.id]);
+    await createApplicantSession(account.id, res);
+    res.json({ signedIn: true, email: account.email, application: await applicantApplication(account.id) });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/help/auth/logout', requireSameOrigin, async (req, res, next) => {
+  try {
+    const token = parseCookies(req)[applicantCookie];
+    if (token) await pool.query('DELETE FROM applicant_sessions WHERE token_hash=$1', [sha256(token)]);
+    res.clearCookie(applicantCookie, { path: '/' });
+    res.status(204).end();
+  } catch (error) { next(error); }
+});
+
+app.get('/api/help/me', requireApplicant, async (req, res, next) => {
+  try {
+    res.json({
+      email: req.applicant.email,
+      applicationsOpen: applicationsOpen(),
+      application: await applicantApplication(req.applicant.account_id),
+    });
+  } catch (error) { next(error); }
+});
+
+app.put('/api/help/application', requireApplicant, requireSameOrigin, async (req, res, next) => {
+  try {
+    if (!applicationsOpen()) return res.status(503).json({ error: 'Applications are not open yet.' });
     const item = helpApplicationSchema.parse(req.body);
-    const result = await pool.query(
-      `INSERT INTO assistance_cases
-       (applicant_name, applicant_email, province, request_category,
-        request_summary, requested_cents, story_consent, story_consent_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,CASE WHEN $7 THEN now() END)
-       RETURNING id`,
-      [item.name, item.email.toLowerCase(), item.province, item.category,
-       item.summary, item.requestedCents, item.storyConsent]);
-    res.status(201).json({ submitted: true, reference: result.rows[0].id });
+    if ((item.preferredContact === 'phone' || item.preferredContact === 'either') && item.phone.length < 7) {
+      return res.status(400).json({ error: 'Add a phone number for the contact method you selected.' });
+    }
+    if (item.publicIdentityPreference === 'pseudonym' && item.publicAlias.length < 2) {
+      return res.status(400).json({ error: 'Add the pseudonym you would want us to use.' });
+    }
+    const existing = await applicantApplication(req.applicant.account_id);
+    if (existing && !['draft','submitted','need_more_info'].includes(existing.status)) {
+      return res.status(409).json({ error: 'This application is being reviewed and cannot be edited right now.' });
+    }
+
+    const values = [
+      item.name, req.applicant.email.toLowerCase(), item.province, item.city || null,
+      item.preferredContact, item.phone || null, item.category, item.summary,
+      item.requestedCents, item.privateStory, item.publicStoryDraft || null,
+      item.publicIdentityPreference, item.publicAlias || null, item.openToPublicStory,
+      item.eligibilityConfirmed, item.accuracyConfirmed, item.privacyAcknowledged,
+      req.applicant.account_id,
+    ];
+
+    if (existing) {
+      await pool.query(`UPDATE assistance_cases SET
+        applicant_name=$1,applicant_email=$2,province=$3,city=$4,preferred_contact=$5,phone=$6,
+        request_category=$7,request_summary=$8,requested_cents=$9,private_story=$10,
+        public_story_draft=$11,public_identity_preference=$12,public_alias=$13,
+        open_to_public_story=$14,eligibility_confirmed=$15,accuracy_confirmed=$16,
+        privacy_acknowledged=$17,updated_at=now()
+        WHERE id=$18`, [...values.slice(0,17), existing.id]);
+    } else {
+      await pool.query(`INSERT INTO assistance_cases
+        (status,applicant_name,applicant_email,province,city,preferred_contact,phone,
+         request_category,request_summary,requested_cents,private_story,public_story_draft,
+         public_identity_preference,public_alias,open_to_public_story,eligibility_confirmed,
+         accuracy_confirmed,privacy_acknowledged,account_id)
+        VALUES ('draft',$1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)`, values);
+    }
+    res.json({ saved: true, application: await applicantApplication(req.applicant.account_id) });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/help/application/submit', requireApplicant, requireSameOrigin, async (req, res, next) => {
+  try {
+    const current = await applicantApplication(req.applicant.account_id);
+    if (!current) return res.status(409).json({ error: 'Save your application before submitting it.' });
+    if (!['draft','submitted','need_more_info'].includes(current.status)) {
+      return res.status(409).json({ error: 'This application is already in review.' });
+    }
+    if (!current.eligibility_confirmed || !current.accuracy_confirmed || !current.privacy_acknowledged) {
+      return res.status(400).json({ error: 'Please complete the required confirmations before submitting.' });
+    }
+    await pool.query(`UPDATE assistance_cases SET status='submitted',
+      submitted_at=COALESCE(submitted_at,now()),updated_at=now() WHERE id=$1`, [current.id]);
+    await pool.query(`INSERT INTO audit_log(actor_type,actor_id,event_type,entity_type,entity_id)
+      VALUES ('applicant',$1,'help_application_submitted','assistance_case',$2)`,
+      [req.applicant.account_id, current.id]);
+    res.json({ submitted: true, application: await applicantApplication(req.applicant.account_id) });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/help/application/photo', requireApplicant, requireSameOrigin, photoUpload.single('photo'), async (req, res, next) => {
+  try {
+    const current = await applicantApplication(req.applicant.account_id);
+    if (!current) return res.status(409).json({ error: 'Save your application before adding a photo.' });
+    if (!req.file) return res.status(400).json({ error: 'Choose a JPG, PNG, or WebP image up to 6 MB.' });
+    if (!['draft','submitted','need_more_info'].includes(current.status)) {
+      return res.status(409).json({ error: 'This application is being reviewed and its photo cannot be changed right now.' });
+    }
+    await fs.mkdir(privateUploadDir, { recursive: true, mode: 0o700 });
+    const key = `${crypto.randomUUID()}.webp`;
+    const destination = path.join(privateUploadDir, key);
+    await sharp(req.file.buffer).rotate().resize({
+      width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true,
+    }).webp({ quality: 84 }).toFile(destination);
+    const prior = await pool.query('SELECT photo_storage_key FROM assistance_cases WHERE id=$1', [current.id]);
+    await pool.query(`UPDATE assistance_cases SET photo_storage_key=$1,photo_original_name=$2,
+      photo_mime='image/webp',photo_uploaded_at=now(),updated_at=now() WHERE id=$3`,
+      [key, req.file.originalname.slice(0, 200), current.id]);
+    const oldKey = prior.rows[0]?.photo_storage_key;
+    if (oldKey && oldKey !== key) await fs.unlink(path.join(privateUploadDir, oldKey)).catch(() => {});
+    res.json({ uploaded: true, application: await applicantApplication(req.applicant.account_id) });
+  } catch (error) { next(error); }
+});
+
+app.get('/api/help/application/photo', requireApplicant, async (req, res, next) => {
+  try {
+    const result = await pool.query('SELECT photo_storage_key FROM assistance_cases WHERE account_id=$1 ORDER BY created_at DESC LIMIT 1', [req.applicant.account_id]);
+    const key = result.rows[0]?.photo_storage_key;
+    if (!key) return res.status(404).end();
+    res.set('Cache-Control', 'private, no-store');
+    res.type('image/webp').sendFile(path.join(privateUploadDir, key));
+  } catch (error) { next(error); }
+});
+
+app.delete('/api/help/application/photo', requireApplicant, requireSameOrigin, async (req, res, next) => {
+  try {
+    const current = await applicantApplication(req.applicant.account_id);
+    if (!current) return res.status(404).end();
+    if (!['draft','submitted','need_more_info'].includes(current.status)) {
+      return res.status(409).json({ error: 'This application is being reviewed and its photo cannot be changed right now.' });
+    }
+    const prior = await pool.query('SELECT photo_storage_key FROM assistance_cases WHERE id=$1', [current.id]);
+    await pool.query(`UPDATE assistance_cases SET photo_storage_key=NULL,photo_original_name=NULL,
+      photo_mime=NULL,photo_uploaded_at=NULL,updated_at=now() WHERE id=$1`, [current.id]);
+    const oldKey = prior.rows[0]?.photo_storage_key;
+    if (oldKey) await fs.unlink(path.join(privateUploadDir, oldKey)).catch(() => {});
+    res.status(204).end();
   } catch (error) { next(error); }
 });
 
