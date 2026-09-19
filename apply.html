@@ -44,6 +44,7 @@
         <p>Sign in to continue your private MapleWish application.</p>
         <label>Email<input name="email" type="email" autocomplete="email" required /></label>
         <label>Password<input name="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" required /></label>
+        <div class="auth-help-row"><a href="/reset-password.html">Forgot your password?</a></div>
         <button class="button primary full" type="submit">Sign in</button>
       </form>
       <p id="authStatus" class="form-status" aria-live="polite"></p>
@@ -55,6 +56,10 @@
         <div class="applicant-account"><span id="accountEmail"></span><button id="logoutButton" class="text-button" type="button">Sign out</button></div>
       </div>
 
+      <div id="verificationNotice" class="verification-notice hidden">
+        <div><b>Verify your email address</b><span id="verificationCopy">Check your inbox for the verification link.</span></div>
+        <button id="resendVerificationButton" class="button ghost small" type="button">Resend verification</button>
+      </div>
       <div id="applicationState" class="application-state hidden"></div>
 
       <form id="applicationForm" class="application-form">

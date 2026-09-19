@@ -17,6 +17,15 @@ export const applicantCredentialsSchema = z.object({
   password: z.string().min(10).max(128),
 });
 
+export const applicantEmailSchema = z.object({
+  email: z.string().trim().email().max(254),
+});
+
+export const passwordResetSchema = z.object({
+  token: z.string().min(32).max(200),
+  password: z.string().min(10).max(128),
+});
+
 export const helpApplicationSchema = z.object({
   name: z.string().trim().min(2).max(120),
   province: z.string().trim().min(2).max(40),

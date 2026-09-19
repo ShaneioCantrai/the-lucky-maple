@@ -5,6 +5,7 @@ const applicationForm = $('applicationForm');
 const authStatus = $('authStatus');
 const applicationStatus = $('applicationStatus');
 let currentApplication = null;
+let currentApplicantState = null;
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -130,18 +131,44 @@ function payloadFromForm() {
     privacyAcknowledged: form.get('privacyAcknowledged') === 'on',
   };
 }
+function renderVerification(data) {
+  const notice = $('verificationNotice');
+  const resend = $('resendVerificationButton');
+  if (data.emailVerified) {
+    notice.classList.add('hidden');
+    return;
+  }
+  if (!data.emailDeliveryAvailable && !data.verificationRequired) {
+    notice.classList.add('hidden');
+    return;
+  }
+  notice.classList.remove('hidden');
+  resend.classList.toggle('hidden', !data.emailDeliveryAvailable);
+  $('verificationCopy').textContent = data.emailDeliveryAvailable
+    ? (data.verificationRequired
+      ? 'Check your inbox. Email verification is required before you can submit.'
+      : 'Check your inbox for a verification link to secure your account.')
+    : 'Email verification is required, but delivery is temporarily unavailable.';
+}
+
 async function showApplicant(data) {
+  currentApplicantState = data;
   authPanel.classList.add('hidden');
   applicationPanel.classList.remove('hidden');
   $('accountEmail').textContent = data.email || '';
   if (data.application) fillForm(data.application);
+  renderVerification(data);
   renderState(data.application || null);
 }
 
 async function loadSession() {
+  const verificationResult = new URL(location.href).searchParams.get('verified');
   try {
     const data = await api('/api/help/me');
     await showApplicant(data);
+    if (verificationResult === '1') setStatus(applicationStatus, 'Email verified. Thank you.', 'success');
+    else if (verificationResult === '0') setStatus(applicationStatus, 'That verification link is invalid or has expired.', 'error');
+    if (verificationResult) history.replaceState({}, '', '/apply.html');
   } catch (error) {
     if (error.status === 401) showAuth('register');
     else {
@@ -168,6 +195,9 @@ $('registerForm').addEventListener('submit', async event => {
     });
     event.currentTarget.reset();
     await showApplicant(data);
+    if (data.verificationEmailSent) {
+      setStatus(applicationStatus, 'Account created. We sent a verification link to your email.', 'success');
+    }
   } catch (error) { setStatus(authStatus, error.message, 'error'); }
 });
 
@@ -184,10 +214,31 @@ $('loginForm').addEventListener('submit', async event => {
     await showApplicant(data);
   } catch (error) { setStatus(authStatus, error.message, 'error'); }
 });
+$('resendVerificationButton').addEventListener('click', async () => {
+  const button = $('resendVerificationButton');
+  button.disabled = true;
+  $('verificationCopy').textContent = 'Sending a fresh verification link…';
+  try {
+    const data = await api('/api/help/auth/resend-verification', { method: 'POST' });
+    if (data.alreadyVerified) {
+      currentApplicantState.emailVerified = true;
+      renderVerification(currentApplicantState);
+      setStatus(applicationStatus, 'Your email is already verified.', 'success');
+    } else {
+      $('verificationCopy').textContent = 'Verification email sent. The link expires in 24 hours.';
+    }
+  } catch (error) {
+    $('verificationCopy').textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+
 $('logoutButton').addEventListener('click', async () => {
   try { await api('/api/help/auth/logout', { method: 'POST' }); } catch {}
   applicationForm.reset();
   currentApplication = null;
+  currentApplicantState = null;
   setStatus(applicationStatus, '');
   showAuth('login');
 });

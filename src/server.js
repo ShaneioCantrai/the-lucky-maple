@@ -9,7 +9,8 @@ import multer from 'multer';
 import sharp from 'sharp';
 import { rateLimit } from 'express-rate-limit';
 import { pool, dbHealth, withTransaction } from './db.js';
-import { applicantCredentialsSchema, contestEntrySchema, helpApplicationDraftSchema, helpApplicationSchema, mockPurchaseSchema } from './schemas.js';
+import { emailDeliveryConfigured, sendPasswordChangedEmail, sendPasswordResetEmail, sendVerificationEmail } from './mailer.js';
+import { applicantCredentialsSchema, applicantEmailSchema, contestEntrySchema, helpApplicationDraftSchema, helpApplicationSchema, mockPurchaseSchema, passwordResetSchema } from './schemas.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -18,6 +19,7 @@ const rulesVersion = process.env.RULES_VERSION || 'prototype-0.1';
 const identitySecret = process.env.IDENTITY_HASH_SECRET || 'development-only-change-me';
 const applicantCookie = 'maplewish_applicant';
 const applicantSessionDays = Math.max(1, Number(process.env.APPLICANT_SESSION_DAYS || 30));
+const requireEmailVerification = process.env.REQUIRE_EMAIL_VERIFICATION === 'true';
 const privateUploadDir = process.env.PRIVATE_UPLOAD_DIR || '/var/lib/maplewish/private-uploads';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
@@ -33,8 +35,10 @@ app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100 }));
 app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(repoRoot, 'index.html')));
 app.get('/rules.html', (_req, res) => res.sendFile(path.join(repoRoot, 'rules.html')));
 app.get('/apply.html', (_req, res) => res.sendFile(path.join(repoRoot, 'apply.html')));
+app.get('/reset-password.html', (_req, res) => res.sendFile(path.join(repoRoot, 'reset-password.html')));
 app.get('/app.js', (_req, res) => res.sendFile(path.join(repoRoot, 'app.js')));
 app.get('/apply.js', (_req, res) => res.sendFile(path.join(repoRoot, 'apply.js')));
+app.get('/reset-password.js', (_req, res) => res.sendFile(path.join(repoRoot, 'reset-password.js')));
 app.get('/leaf-layout.js', (_req, res) => res.sendFile(path.join(repoRoot, 'leaf-layout.js')));
 app.get('/styles.css', (_req, res) => res.sendFile(path.join(repoRoot, 'styles.css')));
 app.use('/img/web', express.static(path.join(repoRoot, 'img', 'web'), { maxAge: '1h', immutable: false }));
@@ -101,7 +105,7 @@ async function requireApplicant(req, res, next) {
   try {
     const token = parseCookies(req)[applicantCookie];
     if (!token) return res.status(401).json({ error: 'Sign in to continue.' });
-    const result = await pool.query(`SELECT s.id AS session_id,s.account_id,a.email
+    const result = await pool.query(`SELECT s.id AS session_id,s.account_id,a.email,a.email_verified_at
       FROM applicant_sessions s JOIN applicant_accounts a ON a.id=s.account_id
       WHERE s.token_hash=$1 AND s.expires_at>now() LIMIT 1`, [sha256(token)]);
     if (!result.rows[0]) {
@@ -124,6 +128,25 @@ function requireSameOrigin(req, res, next) {
 }
 
 const applicantAuthLimiter = rateLimit({ windowMs: 15 * 60 * 1000, limit: 20 });
+const applicantEmailLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 8 });
+
+async function issueApplicantAuthToken(accountId, purpose, ttlMs) {
+  const token = crypto.randomBytes(32).toString('base64url');
+  const expiresAt = new Date(Date.now() + ttlMs);
+  await withTransaction(async client => {
+    await client.query(`UPDATE applicant_auth_tokens SET used_at=COALESCE(used_at,now())
+      WHERE account_id=$1 AND purpose=$2 AND used_at IS NULL`, [accountId, purpose]);
+    await client.query(`INSERT INTO applicant_auth_tokens(account_id,purpose,token_hash,expires_at)
+      VALUES ($1,$2,$3,$4)`, [accountId, purpose, sha256(token), expiresAt]);
+  });
+  return token;
+}
+
+async function sendApplicantVerification(accountId, email) {
+  const token = await issueApplicantAuthToken(accountId, 'verify_email', 24 * 60 * 60 * 1000);
+  await sendVerificationEmail(email, token);
+}
+
 const photoUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 6 * 1024 * 1024, files: 1 },
@@ -260,15 +283,26 @@ async function applicantApplication(accountId) {
   return result.rows[0] || null;
 }
 
+app.get('/api/help/auth/capabilities', (_req, res) => {
+  res.json({
+    emailDeliveryAvailable: emailDeliveryConfigured(),
+    verificationRequired: requireEmailVerification,
+  });
+});
+
 app.post('/api/help/auth/register', applicantAuthLimiter, requireSameOrigin, async (req, res, next) => {
   try {
     if (!applicationsOpen()) return res.status(503).json({ error: 'Applications are not open yet.' });
+    if (requireEmailVerification && !emailDeliveryConfigured()) {
+      return res.status(503).json({ error: 'Email verification is temporarily unavailable.' });
+    }
     const credentials = applicantCredentialsSchema.parse(req.body);
     const record = await makePasswordRecord(credentials.password);
     let account;
     try {
-      const result = await pool.query(`INSERT INTO applicant_accounts (email,password_salt,password_hash,last_login_at)
-        VALUES ($1,$2,$3,now()) RETURNING id,email`,
+      const result = await pool.query(`INSERT INTO applicant_accounts
+        (email,password_salt,password_hash,last_login_at,email_verified_at)
+        VALUES ($1,$2,$3,now(),NULL) RETURNING id,email,email_verified_at`,
         [credentials.email.toLowerCase(), record.salt, record.hash]);
       account = result.rows[0];
     } catch (error) {
@@ -278,14 +312,33 @@ app.post('/api/help/auth/register', applicantAuthLimiter, requireSameOrigin, asy
     await createApplicantSession(account.id, res);
     await pool.query(`INSERT INTO audit_log(actor_type,actor_id,event_type,entity_type,entity_id)
       VALUES ('applicant',$1,'applicant_registered','applicant_account',$1)`, [account.id]);
-    res.status(201).json({ signedIn: true, email: account.email, application: null });
+
+    let verificationEmailSent = false;
+    if (emailDeliveryConfigured()) {
+      try {
+        await sendApplicantVerification(account.id, account.email);
+        verificationEmailSent = true;
+      } catch (error) {
+        console.error('Verification email failed:', error.message);
+      }
+    }
+
+    res.status(201).json({
+      signedIn: true,
+      email: account.email,
+      emailVerified: false,
+      emailDeliveryAvailable: emailDeliveryConfigured(),
+      verificationRequired: requireEmailVerification,
+      verificationEmailSent,
+      application: null,
+    });
   } catch (error) { next(error); }
 });
 
 app.post('/api/help/auth/login', applicantAuthLimiter, requireSameOrigin, async (req, res, next) => {
   try {
     const credentials = applicantCredentialsSchema.parse(req.body);
-    const result = await pool.query(`SELECT id,email,password_salt,password_hash
+    const result = await pool.query(`SELECT id,email,password_salt,password_hash,email_verified_at
       FROM applicant_accounts WHERE lower(email)=lower($1) LIMIT 1`, [credentials.email]);
     const account = result.rows[0];
     if (!account) {
@@ -298,7 +351,14 @@ app.post('/api/help/auth/login', applicantAuthLimiter, requireSameOrigin, async 
     await pool.query('DELETE FROM applicant_sessions WHERE expires_at<=now()');
     await pool.query('UPDATE applicant_accounts SET last_login_at=now() WHERE id=$1', [account.id]);
     await createApplicantSession(account.id, res);
-    res.json({ signedIn: true, email: account.email, application: await applicantApplication(account.id) });
+    res.json({
+      signedIn: true,
+      email: account.email,
+      emailVerified: Boolean(account.email_verified_at),
+      emailDeliveryAvailable: emailDeliveryConfigured(),
+      verificationRequired: requireEmailVerification,
+      application: await applicantApplication(account.id),
+    });
   } catch (error) { next(error); }
 });
 
@@ -311,10 +371,93 @@ app.post('/api/help/auth/logout', requireSameOrigin, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+app.get('/api/help/auth/verify-email', applicantEmailLimiter, async (req, res, next) => {
+  try {
+    const token = String(req.query.token || '');
+    if (token.length < 32 || token.length > 200) return res.redirect(303, '/apply.html?verified=0');
+    const verified = await withTransaction(async client => {
+      const result = await client.query(`SELECT t.id,t.account_id,t.used_at,t.expires_at,a.email_verified_at
+        FROM applicant_auth_tokens t JOIN applicant_accounts a ON a.id=t.account_id
+        WHERE t.token_hash=$1 AND t.purpose='verify_email' FOR UPDATE`, [sha256(token)]);
+      const row = result.rows[0];
+      if (!row) return false;
+      if (row.email_verified_at) return true;
+      if (row.used_at || new Date(row.expires_at).getTime() <= Date.now()) return false;
+      await client.query('UPDATE applicant_accounts SET email_verified_at=COALESCE(email_verified_at,now()) WHERE id=$1', [row.account_id]);
+      await client.query(`UPDATE applicant_auth_tokens SET used_at=COALESCE(used_at,now())
+        WHERE account_id=$1 AND purpose='verify_email' AND used_at IS NULL`, [row.account_id]);
+      await client.query(`INSERT INTO audit_log(actor_type,actor_id,event_type,entity_type,entity_id)
+        VALUES ('applicant',$1,'email_verified','applicant_account',$1)`, [row.account_id]);
+      return true;
+    });
+    return res.redirect(303, verified ? '/apply.html?verified=1' : '/apply.html?verified=0');
+  } catch (error) { next(error); }
+});
+
+app.post('/api/help/auth/resend-verification', applicantEmailLimiter, requireApplicant, requireSameOrigin, async (req, res, next) => {
+  try {
+    if (req.applicant.email_verified_at) return res.json({ sent: false, alreadyVerified: true });
+    if (!emailDeliveryConfigured()) return res.status(503).json({ error: 'Verification email delivery is not configured yet.' });
+    await sendApplicantVerification(req.applicant.account_id, req.applicant.email);
+    await pool.query(`INSERT INTO audit_log(actor_type,actor_id,event_type,entity_type,entity_id)
+      VALUES ('applicant',$1,'verification_email_resent','applicant_account',$1)`, [req.applicant.account_id]);
+    res.json({ sent: true });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/help/auth/forgot-password', applicantEmailLimiter, requireSameOrigin, async (req, res, next) => {
+  try {
+    if (!emailDeliveryConfigured()) return res.status(503).json({ error: 'Password recovery email delivery is not configured yet.' });
+    const request = applicantEmailSchema.parse(req.body);
+    const result = await pool.query('SELECT id,email FROM applicant_accounts WHERE lower(email)=lower($1) LIMIT 1', [request.email]);
+    const account = result.rows[0];
+    if (account) {
+      const token = await issueApplicantAuthToken(account.id, 'password_reset', 60 * 60 * 1000);
+      try {
+        await sendPasswordResetEmail(account.email, token);
+      } catch (error) {
+        console.error('Password reset email failed:', error.message);
+      }
+    }
+    res.status(202).json({ accepted: true, message: 'If an account exists for that email, a reset link has been sent.' });
+  } catch (error) { next(error); }
+});
+
+app.post('/api/help/auth/reset-password', applicantEmailLimiter, requireSameOrigin, async (req, res, next) => {
+  try {
+    const request = passwordResetSchema.parse(req.body);
+    const record = await makePasswordRecord(request.password);
+    const account = await withTransaction(async client => {
+      const result = await client.query(`SELECT t.id,t.account_id,a.email
+        FROM applicant_auth_tokens t JOIN applicant_accounts a ON a.id=t.account_id
+        WHERE t.token_hash=$1 AND t.purpose='password_reset' AND t.used_at IS NULL
+          AND t.expires_at>now() FOR UPDATE`, [sha256(request.token)]);
+      const row = result.rows[0];
+      if (!row) return null;
+      await client.query(`UPDATE applicant_accounts SET password_salt=$1,password_hash=$2,
+        password_changed_at=now() WHERE id=$3`, [record.salt, record.hash, row.account_id]);
+      await client.query(`UPDATE applicant_auth_tokens SET used_at=COALESCE(used_at,now())
+        WHERE account_id=$1 AND purpose='password_reset' AND used_at IS NULL`, [row.account_id]);
+      await client.query('DELETE FROM applicant_sessions WHERE account_id=$1', [row.account_id]);
+      await client.query(`INSERT INTO audit_log(actor_type,actor_id,event_type,entity_type,entity_id)
+        VALUES ('applicant',$1,'password_reset_completed','applicant_account',$1)`, [row.account_id]);
+      return row;
+    });
+    if (!account) return res.status(400).json({ error: 'This reset link is invalid or has expired.' });
+    if (emailDeliveryConfigured()) {
+      sendPasswordChangedEmail(account.email).catch(error => console.error('Password-change email failed:', error.message));
+    }
+    res.json({ reset: true });
+  } catch (error) { next(error); }
+});
+
 app.get('/api/help/me', requireApplicant, async (req, res, next) => {
   try {
     res.json({
       email: req.applicant.email,
+      emailVerified: Boolean(req.applicant.email_verified_at),
+      emailDeliveryAvailable: emailDeliveryConfigured(),
+      verificationRequired: requireEmailVerification,
       applicationsOpen: applicationsOpen(),
       application: await applicantApplication(req.applicant.account_id),
     });
@@ -361,6 +504,9 @@ app.put('/api/help/application', requireApplicant, requireSameOrigin, async (req
 
 app.post('/api/help/application/submit', requireApplicant, requireSameOrigin, async (req, res, next) => {
   try {
+    if (requireEmailVerification && !req.applicant.email_verified_at) {
+      return res.status(403).json({ error: 'Verify your email before submitting your application.' });
+    }
     const current = await applicantApplication(req.applicant.account_id);
     if (!current) return res.status(409).json({ error: 'Save your application before submitting it.' });
     if (!['draft','submitted','need_more_info'].includes(current.status)) {
