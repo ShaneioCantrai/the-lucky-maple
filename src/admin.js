@@ -135,7 +135,12 @@ app.post('/api/campaigns/:id/activate', async (req, res, next) => {
       const result = await client.query(`UPDATE aid_campaigns
         SET status='active', activated_at=COALESCE(activated_at,now()), completed_at=NULL
         WHERE id=$1 RETURNING *`, [row.id]);
-      return result.rows[0];
+      const activated = result.rows[0];
+      if (activated.assistance_case_id) {
+        await client.query(`UPDATE assistance_cases SET status='published',updated_at=now()
+          WHERE id=$1`, [activated.assistance_case_id]);
+      }
+      return activated;
     });
     if (!campaign) return res.status(404).json({ error: 'Campaign not found.' });
     res.json({ campaign });
