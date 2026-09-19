@@ -36,6 +36,25 @@ export const helpApplicationSchema = z.object({
   privacyAcknowledged: z.boolean().default(false),
 });
 
+export const helpApplicationDraftSchema = z.object({
+  name: z.string().trim().max(120).optional().default(''),
+  province: z.string().trim().max(40).optional().default(''),
+  city: z.string().trim().max(120).optional().default(''),
+  preferredContact: z.enum(['email', 'phone', 'either']).default('email'),
+  phone: z.string().trim().max(40).optional().default(''),
+  category: z.string().trim().max(80).optional().default(''),
+  summary: z.string().trim().max(1200).optional().default(''),
+  privateStory: z.string().trim().max(8000).optional().default(''),
+  publicStoryDraft: z.string().trim().max(3000).optional().default(''),
+  publicIdentityPreference: z.enum(['full_name','first_name','pseudonym','anonymous']).default('first_name'),
+  publicAlias: z.string().trim().max(80).optional().default(''),
+  requestedCents: z.number().int().min(0).max(5_000_000).default(0),
+  openToPublicStory: z.boolean().default(false),
+  eligibilityConfirmed: z.boolean().default(false),
+  accuracyConfirmed: z.boolean().default(false),
+  privacyAcknowledged: z.boolean().default(false),
+});
+
 export const mockPurchaseSchema = z.object({
   email: z.string().trim().email().max(254),
   leaves: z.array(z.object({

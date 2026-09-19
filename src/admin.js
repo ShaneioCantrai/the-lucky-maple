@@ -156,7 +156,8 @@ app.get('/api/cases', async (_req, res, next) => {
     const result = await pool.query(`SELECT id,status,applicant_name,province,city,request_category,
       requested_cents,preferred_contact,open_to_public_story,submitted_at,created_at,
       (photo_storage_key IS NOT NULL) AS has_photo
-      FROM assistance_cases ORDER BY COALESCE(submitted_at,created_at) DESC LIMIT 250`);
+      FROM assistance_cases WHERE status <> 'draft'
+      ORDER BY COALESCE(submitted_at,created_at) DESC LIMIT 250`);
     res.json({ cases: result.rows });
   } catch (error) { next(error); }
 });

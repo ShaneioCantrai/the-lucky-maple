@@ -9,7 +9,7 @@ import multer from 'multer';
 import sharp from 'sharp';
 import { rateLimit } from 'express-rate-limit';
 import { pool, dbHealth, withTransaction } from './db.js';
-import { applicantCredentialsSchema, contestEntrySchema, helpApplicationSchema, mockPurchaseSchema } from './schemas.js';
+import { applicantCredentialsSchema, contestEntrySchema, helpApplicationDraftSchema, helpApplicationSchema, mockPurchaseSchema } from './schemas.js';
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -324,22 +324,16 @@ app.get('/api/help/me', requireApplicant, async (req, res, next) => {
 app.put('/api/help/application', requireApplicant, requireSameOrigin, async (req, res, next) => {
   try {
     if (!applicationsOpen()) return res.status(503).json({ error: 'Applications are not open yet.' });
-    const item = helpApplicationSchema.parse(req.body);
-    if ((item.preferredContact === 'phone' || item.preferredContact === 'either') && item.phone.length < 7) {
-      return res.status(400).json({ error: 'Add a phone number for the contact method you selected.' });
-    }
-    if (item.publicIdentityPreference === 'pseudonym' && item.publicAlias.length < 2) {
-      return res.status(400).json({ error: 'Add the pseudonym you would want us to use.' });
-    }
+    const item = helpApplicationDraftSchema.parse(req.body);
     const existing = await applicantApplication(req.applicant.account_id);
     if (existing && !['draft','submitted','need_more_info'].includes(existing.status)) {
       return res.status(409).json({ error: 'This application is being reviewed and cannot be edited right now.' });
     }
 
     const values = [
-      item.name, req.applicant.email.toLowerCase(), item.province, item.city || null,
-      item.preferredContact, item.phone || null, item.category, item.summary,
-      item.requestedCents, item.privateStory, item.publicStoryDraft || null,
+      item.name || null, req.applicant.email.toLowerCase(), item.province || null, item.city || null,
+      item.preferredContact, item.phone || null, item.category || null, item.summary || null,
+      item.requestedCents || null, item.privateStory || null, item.publicStoryDraft || null,
       item.publicIdentityPreference, item.publicAlias || null, item.openToPublicStory,
       item.eligibilityConfirmed, item.accuracyConfirmed, item.privacyAcknowledged,
       req.applicant.account_id,
@@ -372,7 +366,31 @@ app.post('/api/help/application/submit', requireApplicant, requireSameOrigin, as
     if (!['draft','submitted','need_more_info'].includes(current.status)) {
       return res.status(409).json({ error: 'This application is already in review.' });
     }
-    if (!current.eligibility_confirmed || !current.accuracy_confirmed || !current.privacy_acknowledged) {
+    const complete = helpApplicationSchema.parse({
+      name: current.applicant_name || '',
+      province: current.province || '',
+      city: current.city || '',
+      preferredContact: current.preferred_contact || 'email',
+      phone: current.phone || '',
+      category: current.request_category || '',
+      summary: current.request_summary || '',
+      privateStory: current.private_story || '',
+      publicStoryDraft: current.public_story_draft || '',
+      publicIdentityPreference: current.public_identity_preference || 'first_name',
+      publicAlias: current.public_alias || '',
+      requestedCents: Number(current.requested_cents || 0),
+      openToPublicStory: Boolean(current.open_to_public_story),
+      eligibilityConfirmed: Boolean(current.eligibility_confirmed),
+      accuracyConfirmed: Boolean(current.accuracy_confirmed),
+      privacyAcknowledged: Boolean(current.privacy_acknowledged),
+    });
+    if ((complete.preferredContact === 'phone' || complete.preferredContact === 'either') && complete.phone.length < 7) {
+      return res.status(400).json({ error: 'Add a phone number for the contact method you selected.' });
+    }
+    if (complete.publicIdentityPreference === 'pseudonym' && complete.publicAlias.length < 2) {
+      return res.status(400).json({ error: 'Add the pseudonym you would want us to use.' });
+    }
+    if (!complete.eligibilityConfirmed || !complete.accuracyConfirmed || !complete.privacyAcknowledged) {
       return res.status(400).json({ error: 'Please complete the required confirmations before submitting.' });
     }
     await pool.query(`UPDATE assistance_cases SET status='submitted',
