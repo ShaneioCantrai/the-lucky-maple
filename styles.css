@@ -170,6 +170,69 @@ a { color: inherit; }
 }
 .below-fold h2 { margin: 4px 0 0; font-family: 'Chewy', cursive; font-size: 38px; font-weight: 400; }
 .below-fold p { margin: 0; align-self: center; color: #6f5e4e; line-height: 1.55; }
+
+.stories-section {
+  max-width: 1180px; margin: 34px auto 10px; padding: 30px;
+  background: rgba(255,249,233,.72); border: 1px solid var(--line); border-radius: 28px;
+  box-shadow: 0 16px 44px rgba(75,48,25,.08);
+}
+.stories-heading {
+  display: grid; grid-template-columns: .9fr 1.1fr; gap: 34px; align-items: end; margin-bottom: 22px;
+}
+.stories-heading h2 { margin: 5px 0 0; font-family: 'Chewy', cursive; font-size: 42px; line-height: 1; font-weight: 400; }
+.stories-heading p { margin: 0; color: #6f5e4e; line-height: 1.55; }
+.wish-card {
+  display: grid; grid-template-columns: minmax(250px, 34%) 1fr; overflow: hidden;
+  background: #fffdf6; border: 1px solid rgba(89,62,37,.14); border-radius: 24px;
+  box-shadow: 0 12px 30px rgba(75,48,25,.09);
+}
+.wish-photo-placeholder {
+  min-height: 330px; display: grid; place-items: center; align-content: center; gap: 5px;
+  padding: 24px; text-align: center; color: #6f5947;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(255,255,255,.72), transparent 36%),
+    linear-gradient(145deg, #ead7a7, #d9e4c7);
+  border-right: 1px solid rgba(89,62,37,.12);
+}
+.wish-photo-placeholder span { font-size: 58px; filter: drop-shadow(0 3px 3px rgba(75,48,25,.12)); }
+.wish-photo-placeholder b { font-family: 'Chewy', cursive; font-size: 28px; font-weight: 400; color: #4f3829; }
+.wish-photo-placeholder small { font-size: 11px; font-weight: 800; color: #7e6a56; }
+.wish-card-body { padding: 27px 30px 25px; }
+.wish-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: #7d6b59; font-size: 11px; font-weight: 900; letter-spacing: .05em; }
+.wish-badge { display: inline-flex; padding: 6px 9px; border-radius: 999px; background: #f7dfaa; color: #6d4c2a; }
+.wish-card h3 { margin: 10px 0 8px; font-family: 'Chewy', cursive; font-size: 36px; line-height: 1; font-weight: 400; color: #43251b; }
+.wish-summary { margin: 0 0 20px; color: #655446; line-height: 1.55; }
+.wish-progress-heading { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 7px; font-size: 12px; }
+.wish-progress-heading strong { color: var(--green); }
+.wish-progress-heading span { color: #6e5c4a; font-weight: 900; }
+.wish-progress { height: 11px; overflow: hidden; border-radius: 999px; background: #eadfc8; box-shadow: inset 0 1px 2px rgba(75,48,25,.09); }
+.wish-progress span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--orange), var(--red)); }
+.wish-goal-note { margin: 8px 0 18px; color: #766453; font-size: 11px; line-height: 1.4; }
+.wish-actions { display: flex; align-items: center; gap: 12px; }
+.story-link { border: 0; padding: 10px 2px; background: transparent; color: var(--green); font-weight: 900; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+.story-link:hover { color: #244d3a; }
+.next-wishes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 14px; }
+.next-wish-card { display: flex; gap: 13px; align-items: flex-start; padding: 17px 18px; border: 1px dashed #c8b691; border-radius: 18px; background: rgba(255,255,255,.46); }
+.wish-slot-number { flex: 0 0 auto; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #efe3c9; color: #8a6540; font-weight: 900; font-size: 11px; }
+.next-wish-card b { display: block; margin-top: 1px; font-size: 13px; }
+.next-wish-card p { margin: 3px 0 0; color: #776553; font-size: 11px; line-height: 1.4; }
+
+.modal.story-modal { width: min(680px, calc(100vw - 28px)); max-height: min(88vh, 860px); overflow: auto; }
+.story-modal-photo {
+  min-height: 175px; margin: -4px -4px 20px; display: grid; place-items: center; align-content: center; gap: 4px;
+  border-radius: 18px; background: linear-gradient(145deg, #ead7a7, #d9e4c7); color: #6f5947; text-align: center;
+}
+.story-modal-photo span { font-size: 52px; }
+.story-modal-photo small { font-weight: 900; }
+.story-preview-note, .story-placeholder-copy { padding: 12px 14px; border-radius: 13px; background: #f7e9c7; color: #65513f !important; font-size: 12px; }
+.story-transparency { margin: 18px 0; padding: 15px 16px; border: 1px solid #d8c9aa; border-radius: 16px; background: rgba(255,255,255,.58); }
+.story-transparency > b { display: block; margin-bottom: 8px; font-size: 13px; }
+.story-transparency dl { margin: 0; }
+.story-transparency dl div { display: grid; grid-template-columns: 1fr 1.25fr; gap: 14px; padding: 7px 0; border-top: 1px solid #e8dcc5; font-size: 12px; }
+.story-transparency dl div:first-child { border-top: 0; }
+.story-transparency dt { color: #776553; font-weight: 700; }
+.story-transparency dd { margin: 0; text-align: right; font-weight: 900; color: #4d392b; }
+
 .eyebrow { font-size: 11px; font-weight: 900; letter-spacing: .14em; color: var(--green); }
 footer {
   max-width: 1180px; margin: 0 auto 10px; padding: 18px 4px; display: grid;
@@ -245,6 +308,21 @@ label.check em { font-weight: 400; }
   .hero-steps > div:last-child { border-bottom: 0; }
   .step-icon { width: 34px; height: 34px; font-size: 19px; }
   .below-fold { grid-template-columns: 1fr; padding: 20px; gap: 10px; }
+  .stories-section { padding: 19px; margin-top: 20px; border-radius: 22px; }
+  .stories-heading { grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
+  .stories-heading h2 { font-size: 34px; }
+  .stories-heading p { font-size: 13px; }
+  .wish-card { grid-template-columns: 1fr; }
+  .wish-photo-placeholder { min-height: 205px; border-right: 0; border-bottom: 1px solid rgba(89,62,37,.12); }
+  .wish-card-body { padding: 20px; }
+  .wish-card h3 { font-size: 31px; }
+  .wish-summary { font-size: 13px; }
+  .wish-actions { align-items: stretch; flex-direction: column; }
+  .story-link { text-align: left; }
+  .next-wishes { grid-template-columns: 1fr; }
+  .story-modal { max-height: 90vh; padding: 20px; }
+  .story-transparency dl div { grid-template-columns: 1fr; gap: 2px; }
+  .story-transparency dd { text-align: left; }
   footer { grid-template-columns: 1fr; }
   footer nav { justify-self: start; flex-wrap: wrap; }
   footer small { grid-column: auto; }

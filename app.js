@@ -4,6 +4,7 @@ const NS = "http://www.w3.org/2000/svg";
 const leafLayer = document.getElementById("leafLayer");
 const leafDialog = document.getElementById("leafDialog");
 const plantDialog = document.getElementById("plantDialog");
+const storyDialog = document.getElementById("storyDialog");
 const freeEntryDialog = document.getElementById("freeEntryDialog");
 const dialogBody = document.getElementById("leafDialogBody");
 const ambientLeaves = document.getElementById("ambientLeaves");
@@ -150,8 +151,14 @@ leafLayer.addEventListener("keydown", event => {
 document.querySelectorAll("[data-open]").forEach(button => {
   button.addEventListener("click", event => {
     event.preventDefault();
-    if (button.dataset.open === "plant") openPlantDialog();
-    else freeEntryDialog.showModal();
+    if (button.dataset.open === "plant") {
+      if (storyDialog?.open) storyDialog.close();
+      openPlantDialog();
+    } else if (button.dataset.open === "story") {
+      storyDialog?.showModal();
+    } else {
+      freeEntryDialog.showModal();
+    }
   });
 });
 document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => button.closest("dialog").close()));

@@ -86,9 +86,55 @@
       </section>
     </section>
 
-    <section class="below-fold" id="stories">
-      <div><span class="eyebrow">WHERE THE LEAVES WENT</span><h2>Direct help. Public impact.</h2></div>
-      <p>As assistance is delivered, this area will show real totals and recipient stories where people have chosen to share them. Receiving help is never conditional on publicity.</p>
+    <section class="stories-section" id="stories">
+      <div class="stories-heading">
+        <div>
+          <span class="eyebrow">THE PEOPLE BEHIND THE WISHES</span>
+          <h2>Real people. One wish at a time.</h2>
+        </div>
+        <p>Each wish has a clear goal, a visible milestone, and a real person behind it. Sharing a story is always optional for anyone receiving help.</p>
+      </div>
+
+      <article class="wish-card founder-wish">
+        <div class="wish-photo-placeholder" role="img" aria-label="Placeholder for the founder family's photo">
+          <span aria-hidden="true">🍁</span>
+          <b>Family photo</b>
+          <small>Placeholder for your chosen picture</small>
+        </div>
+        <div class="wish-card-body">
+          <div class="wish-meta">
+            <span class="wish-badge">FOUNDER STORY · PREVIEW</span>
+            <span>Ontario</span>
+          </div>
+          <h3>Help our family stay in our home.</h3>
+          <p class="wish-summary">We're facing a serious housing shortfall and trying to create enough breathing room to keep our family in our home while we work through the rest. We're also the family behind MapleWish, so we're putting that right up front.</p>
+
+          <div class="wish-progress-heading">
+            <strong>First milestone</strong>
+            <span>$0 of $2,000</span>
+          </div>
+          <div class="wish-progress" role="progressbar" aria-label="Founder family first milestone" aria-valuemin="0" aria-valuemax="2000" aria-valuenow="0">
+            <span style="width:0%"></span>
+          </div>
+          <p class="wish-goal-note">Our larger housing shortfall is approximately $8,000. We're breaking it into smaller, transparent milestones.</p>
+
+          <div class="wish-actions">
+            <button class="story-link" type="button" data-open="story">Read our story →</button>
+            <button class="button primary" type="button" data-open="plant">Help this wish</button>
+          </div>
+        </div>
+      </article>
+
+      <div class="next-wishes" aria-label="Upcoming MapleWish stories">
+        <article class="next-wish-card">
+          <span class="wish-slot-number">02</span>
+          <div><b>Next wish</b><p>Applications opening soon. No made-up recipient stories — this space will be reserved for a real person who chooses to share.</p></div>
+        </article>
+        <article class="next-wish-card">
+          <span class="wish-slot-number">03</span>
+          <div><b>Another wish</b><p>A second community wish will appear here when it has been reviewed and approved.</p></div>
+        </article>
+      </div>
     </section>
 
     <footer id="winners">
@@ -100,6 +146,31 @@
   <dialog id="leafDialog" class="modal">
     <button class="close" data-close aria-label="Close">×</button>
     <div id="leafDialogBody"></div>
+  </dialog>
+
+  <dialog id="storyDialog" class="modal story-modal" aria-labelledby="storyTitle">
+    <button class="close" data-close aria-label="Close">×</button>
+    <div class="story-modal-photo" role="img" aria-label="Placeholder for the founder family's photo">
+      <span aria-hidden="true">🍁</span>
+      <small>Your family photo goes here</small>
+    </div>
+    <span class="eyebrow">OUR FIRST WISH · FOUNDER STORY</span>
+    <h2 id="storyTitle">Why we're asking for help.</h2>
+    <p class="story-preview-note"><b>Preview copy:</b> this section is intentionally temporary so you can replace it with your family's real story and photo before launch.</p>
+    <p>We're facing a housing shortfall that has become bigger than we can solve all at once. About <b>$8,000</b> would get our family out of the immediate danger zone, but we're starting with one manageable milestone instead of putting that entire number in front of people.</p>
+    <p>Our first goal is <b>$2,000</b>. Reaching it would give us breathing room while we keep working on the rest ourselves.</p>
+    <p>I'm also the person who built MapleWish. I want that relationship to be completely clear: our family is one of the first families asking for help here, and this founder story is being shown openly rather than presented as an unrelated applicant.</p>
+    <p class="story-placeholder-copy">This is where the full personal explanation will go — what happened, what keeping the house means to your family, what the first milestone changes, and why you decided to build MapleWish in the first place.</p>
+    <div class="story-transparency">
+      <b>Transparency</b>
+      <dl>
+        <div><dt>Founder / recipient</dt><dd>Yes</dd></div>
+        <div><dt>First milestone</dt><dd>$2,000</dd></div>
+        <div><dt>Larger shortfall</dt><dd>Approx. $8,000</dd></div>
+        <div><dt>After this milestone</dt><dd>A new milestone is shown separately</dd></div>
+      </dl>
+    </div>
+    <button class="button primary full" type="button" data-open="plant">Help this wish</button>
   </dialog>
 
   <dialog id="plantDialog" class="modal">
