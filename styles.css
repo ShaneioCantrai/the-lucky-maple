@@ -62,7 +62,7 @@ a { color: inherit; }
 .tree-layer > img { display: block; width: 100%; height: auto; transform-origin: 50% 82%; will-change: transform; }
 .trunk { width: 34%; bottom: 8.5%; z-index: 4; }
 .scene-bird {
-  position: absolute; z-index: 7; width: 7.2%; left: 64.9%; top: 38.3%;
+  position: absolute; z-index: 7; width: 7.2%; left: 63.7%; top: 37.2%;
   filter: drop-shadow(0 4px 6px rgba(54,37,19,.16)); transform-origin: 50% 100%;
 }
 .scene-foreground { position: absolute; z-index: 9; left: 0; bottom: 0; width: 100%; height: auto; pointer-events: none; }
