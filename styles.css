@@ -476,3 +476,63 @@ label.check em { font-weight: 400; }
   .top-actions { align-items: center; }
   .top-actions .language-switch a, .top-actions .language-switch span { padding: 5px 7px; font-size: 9px; }
 }
+
+/* French desktop fit: allow longer copy to breathe without shrinking the whole site. */
+@media (min-width: 761px) {
+  html[lang="fr-CA"] .hero-copy {
+    width: 29%;
+    max-width: 420px;
+  }
+  html[lang="fr-CA"] .hero-copy h1 {
+    font-size: clamp(42px, 3.75vw, 60px);
+    line-height: .94;
+  }
+  html[lang="fr-CA"] .hero-copy p {
+    margin-top: 10px;
+    font-size: clamp(14px, 1vw, 18px);
+    line-height: 1.45;
+  }
+  html[lang="fr-CA"] .share-card {
+    top: 42%;
+  }
+  html[lang="fr-CA"] .share-card > p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  html[lang="fr-CA"] .share-meta {
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  html[lang="fr-CA"] .impact-grid div {
+    min-height: 78px;
+  }
+  html[lang="fr-CA"] .impact-grid span {
+    font-size: 11px;
+    line-height: 1.25;
+  }
+  html[lang="fr-CA"] .tree-counter {
+    font-size: 13px;
+  }
+  html[lang="fr-CA"] .tree-counter small {
+    font-size: 11px;
+  }
+  html[lang="fr-CA"] .main-nav a {
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+  html[lang="fr-CA"] .topbar {
+    gap: 12px;
+  }
+  html[lang="fr-CA"] .top-actions {
+    gap: 7px;
+  }
+  html[lang="fr-CA"] .top-actions .language-switch {
+    padding: 3px;
+  }
+  html[lang="fr-CA"] .top-actions .language-switch a,
+  html[lang="fr-CA"] .top-actions .language-switch span {
+    padding: 5px 7px;
+    font-size: 9px;
+  }
+}
