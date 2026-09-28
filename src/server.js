@@ -182,6 +182,7 @@ app.get('/api/stats', async (_req, res, next) => {
       helpAllocatedCents: Number(row.help_allocated_cents),
       helpDeliveredCents: Number(row.help_delivered_cents),
       helpBalanceCents: Number(row.help_balance_cents),
+      grossPaidCents: Number(row.gross_paid_cents || 0),
     });
   } catch (error) { next(error); }
 });
@@ -226,7 +227,7 @@ app.get('/api/leaves', async (req, res, next) => {
     const limit = Math.min(Number(req.query.limit || 2000), 5000);
     const result = await pool.query(
       `SELECT l.id, l.display_name, l.message, l.colour, l.public_slug, l.planted_at,
-              o.amount_total_cents AS gross_cents
+              l.leaf_slot, o.amount_total_cents AS gross_cents
        FROM leaves l
        JOIN leaf_orders o ON o.id = l.order_id
        WHERE l.retired_at IS NULL

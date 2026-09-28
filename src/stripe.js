@@ -2,17 +2,20 @@ import crypto from 'node:crypto';
 import express from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
+import { PURCHASE_LEAF_SLOT_ORDER } from '../leaf-layout.js';
 import { pool, withTransaction } from './db.js';
 
 const MINIMUM_LEAF_CENTS = 200;
 const TERMS_VERSION = 'contributions-2026-09-19';
 const STRIPE_SIGNATURE_TOLERANCE_SECONDS = 300;
+const MAX_LEAF_SLOT = PURCHASE_LEAF_SLOT_ORDER.length;
 
 const checkoutIntentSchema = z.object({
   amountCents: z.number().int().min(MINIMUM_LEAF_CENTS).max(100_000_000),
   displayName: z.string().trim().max(40).optional().default(''),
   message: z.string().trim().max(120).optional().default(''),
   email: z.string().trim().email().max(254),
+  selectedLeafSlot: z.number().int().min(1).max(MAX_LEAF_SLOT).nullable().optional(),
   termsLanguage: z.enum(['en-CA', 'fr-CA']),
   frenchTermsPresented: z.literal(true),
   englishLanguageChoiceConfirmed: z.boolean().default(false),
@@ -72,6 +75,41 @@ function stripeObjectId(value) {
   if (typeof value === 'string') return value;
   if (typeof value === 'object' && typeof value.id === 'string') return value.id;
   return null;
+}
+
+async function reserveLeafSlot(client, requestedSlot = null, excludeIntentId = null) {
+  await client.query(
+    `UPDATE stripe_checkout_intents
+     SET status='expired'
+     WHERE status='pending' AND expires_at <= now()`,
+  );
+
+  const params = [];
+  let excludeClause = '';
+  if (excludeIntentId) {
+    params.push(excludeIntentId);
+    excludeClause = ` AND id <> $${params.length}`;
+  }
+
+  const unavailableResult = await client.query(
+    `SELECT leaf_slot AS slot
+       FROM leaves
+      WHERE retired_at IS NULL AND leaf_slot IS NOT NULL
+     UNION
+     SELECT selected_leaf_slot AS slot
+       FROM stripe_checkout_intents
+      WHERE selected_leaf_slot IS NOT NULL
+        AND status IN ('pending','paid')${excludeClause}`,
+    params,
+  );
+  const unavailable = new Set(unavailableResult.rows.map(row => Number(row.slot)));
+
+  if (requestedSlot != null) {
+    const slot = Number(requestedSlot);
+    return unavailable.has(slot) ? null : slot;
+  }
+
+  return PURCHASE_LEAF_SLOT_ORDER.find(slot => !unavailable.has(slot)) ?? null;
 }
 
 async function processStripeEvent(event) {
@@ -141,6 +179,12 @@ async function processStripeEvent(event) {
     }
 
     if (session.payment_status !== 'paid') {
+      await client.query(
+        `UPDATE stripe_checkout_intents
+         SET stripe_session_id=COALESCE(stripe_session_id,$2)
+         WHERE id=$1`,
+        [intent.id, session.id],
+      );
       await client.query('UPDATE stripe_webhook_events SET processed_at=now() WHERE id=$1', [event.id]);
       return 'awaiting-payment';
     }
@@ -152,14 +196,27 @@ async function processStripeEvent(event) {
     }
 
     const existing = await client.query(
-      `SELECT id FROM leaf_orders
-       WHERE payment_provider='stripe' AND payment_reference=$1
-       LIMIT 1`,
+      `SELECT o.id, l.leaf_slot
+         FROM leaf_orders o
+         LEFT JOIN leaves l ON l.order_id=o.id AND l.retired_at IS NULL
+        WHERE o.payment_provider='stripe' AND o.payment_reference=$1
+        LIMIT 1`,
       [session.id],
     );
 
     let orderId = existing.rows[0]?.id || null;
+    let leafSlot = Number(existing.rows[0]?.leaf_slot || intent.selected_leaf_slot || 0) || null;
+
     if (!orderId) {
+      if (!leafSlot) {
+        leafSlot = await reserveLeafSlot(client, null, intent.id);
+        if (!leafSlot) throw new Error('The MapleWish tree has no available leaf slots.');
+        await client.query(
+          'UPDATE stripe_checkout_intents SET selected_leaf_slot=$2 WHERE id=$1',
+          [intent.id, leafSlot],
+        );
+      }
+
       const purchaserEmail = String(
         session.customer_details?.email ||
         session.customer_email ||
@@ -180,12 +237,13 @@ async function processStripeEvent(event) {
       orderId = order.rows[0].id;
 
       await client.query(
-        `INSERT INTO leaves(order_id,display_name,message,colour)
-         VALUES ($1,$2,$3,'red')`,
+        `INSERT INTO leaves(order_id,display_name,message,colour,leaf_slot)
+         VALUES ($1,$2,$3,'red',$4)`,
         [
           orderId,
           intent.display_name || 'Anonymous Canadian',
           intent.message || null,
+          leafSlot,
         ],
       );
 
@@ -206,9 +264,10 @@ async function processStripeEvent(event) {
            stripe_session_id=$2,
            stripe_payment_intent_id=$3,
            order_id=$4,
+           selected_leaf_slot=COALESCE(selected_leaf_slot,$5),
            paid_at=COALESCE(paid_at,now())
        WHERE id=$1`,
-      [intent.id, session.id, stripeObjectId(session.payment_intent), orderId],
+      [intent.id, session.id, stripeObjectId(session.payment_intent), orderId, leafSlot],
     );
 
     await client.query('UPDATE stripe_webhook_events SET processed_at=now() WHERE id=$1', [event.id]);
@@ -245,6 +304,40 @@ export function registerStripeWebhookRoute(app) {
 export function registerStripeCheckoutRoute(app) {
   const checkoutLimiter = rateLimit({ windowMs: 60 * 60 * 1000, limit: 30 });
 
+  app.get('/api/checkout/status', checkoutLimiter, async (req, res, next) => {
+    try {
+      const sessionId = String(req.query.session_id || '').trim();
+      if (!/^cs_[A-Za-z0-9_]+$/.test(sessionId) || sessionId.length > 255) {
+        return res.status(400).json({ error: 'Invalid checkout session.' });
+      }
+
+      const result = await pool.query(
+        `SELECT i.status, i.display_name, i.selected_leaf_slot,
+                o.amount_total_cents, o.help_allocation_cents,
+                l.leaf_slot
+           FROM stripe_checkout_intents i
+           LEFT JOIN leaf_orders o ON o.id=i.order_id
+           LEFT JOIN leaves l ON l.order_id=i.order_id AND l.retired_at IS NULL
+          WHERE i.stripe_session_id=$1
+          LIMIT 1`,
+        [sessionId],
+      );
+
+      const row = result.rows[0];
+      if (!row) return res.json({ status: 'processing' });
+
+      res.json({
+        status: row.status,
+        displayName: row.display_name || null,
+        amountTotalCents: row.amount_total_cents == null ? null : Number(row.amount_total_cents),
+        helpAllocationCents: row.help_allocation_cents == null ? null : Number(row.help_allocation_cents),
+        leafSlot: Number(row.leaf_slot || row.selected_leaf_slot || 0) || null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post('/api/checkout', checkoutLimiter, async (req, res, next) => {
     try {
       if (!sameOrigin(req)) return res.status(403).json({ error: 'Cross-site request rejected.' });
@@ -262,23 +355,41 @@ export function registerStripeCheckoutRoute(app) {
         });
       }
 
-      const result = await pool.query(
-        `INSERT INTO stripe_checkout_intents
-         (display_name,message,email,amount_prefill_cents,terms_language,
-          french_terms_presented,english_language_choice_confirmed,terms_version)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-         RETURNING id`,
-        [
-          checkout.displayName || 'Anonymous Canadian',
-          checkout.message || null,
-          checkout.email.toLowerCase(),
-          checkout.amountCents,
-          checkout.termsLanguage,
-          checkout.frenchTermsPresented,
-          checkout.englishLanguageChoiceConfirmed,
-          TERMS_VERSION,
-        ],
-      );
+      let result;
+      try {
+        result = await withTransaction(async client => {
+          const selectedLeafSlot = await reserveLeafSlot(client, checkout.selectedLeafSlot ?? null);
+          if (!selectedLeafSlot) {
+            const error = new Error('That leaf was just claimed or reserved. Please choose another leaf.');
+            error.code = 'MAPLEWISH_LEAF_UNAVAILABLE';
+            throw error;
+          }
+
+          return client.query(
+            `INSERT INTO stripe_checkout_intents
+             (display_name,message,email,amount_prefill_cents,selected_leaf_slot,terms_language,
+              french_terms_presented,english_language_choice_confirmed,terms_version)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             RETURNING id,selected_leaf_slot`,
+            [
+              checkout.displayName || 'Anonymous Canadian',
+              checkout.message || null,
+              checkout.email.toLowerCase(),
+              checkout.amountCents,
+              selectedLeafSlot,
+              checkout.termsLanguage,
+              checkout.frenchTermsPresented,
+              checkout.englishLanguageChoiceConfirmed,
+              TERMS_VERSION,
+            ],
+          );
+        });
+      } catch (error) {
+        if (error.code === '23505' || error.code === 'MAPLEWISH_LEAF_UNAVAILABLE') {
+          return res.status(409).json({ error: 'That leaf was just claimed or reserved. Please choose another leaf.' });
+        }
+        throw error;
+      }
 
       const url = new URL(paymentLinkUrl);
       url.searchParams.set('client_reference_id', result.rows[0].id);
@@ -286,10 +397,12 @@ export function registerStripeCheckoutRoute(app) {
       url.searchParams.set('prefilled_email', checkout.email.toLowerCase());
       url.searchParams.set('locale', checkout.termsLanguage === 'fr-CA' ? 'fr' : 'en');
 
-      res.status(201).json({ checkoutUrl: url.toString() });
+      res.status(201).json({
+        checkoutUrl: url.toString(),
+        leafSlot: Number(result.rows[0].selected_leaf_slot),
+      });
     } catch (error) {
       next(error);
     }
   });
 }
-

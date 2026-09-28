@@ -189,6 +189,7 @@
     <span class="eyebrow">PLANT YOUR LEAF</span>
     <h2>Choose how big your leaf grows.</h2>
     <p>Every contribution plants one leaf. Bigger contributions grow a bigger leaf on the tree.</p>
+    <p id="selectedLeafNote" class="selected-leaf-note hidden"></p>
     <div class="leaf-tier-picker" role="group" aria-label="Choose contribution amount">
       <button type="button" class="leaf-tier-option selected" data-leaf-amount="2"><b>$2</b><span>Leaf</span></button>
       <button type="button" class="leaf-tier-option" data-leaf-amount="5"><b>$5</b><span>Bigger</span></button>
@@ -208,6 +209,17 @@
     <button class="button primary full" id="stripeCheckout">Continue to secure checkout · $2 CAD</button>
     <small>Pay what you want from $2 CAD. Presets are $2, $5, $10, and $25+. Stripe hosts the secure checkout; 50% of the amount paid is allocated to direct help.</small>
     <p id="plantStatus" class="form-status" aria-live="polite"></p>
+  </dialog>
+
+  <dialog id="paymentSuccessDialog" class="modal payment-success-modal">
+    <button class="close" data-close aria-label="Close">×</button>
+    <div class="payment-success-icon" aria-hidden="true">✓</div>
+    <span class="eyebrow">MAPLEWISH PAYMENT</span>
+    <h2 id="paymentSuccessTitle">Payment received.</h2>
+    <p id="paymentSuccessMessage">Stripe is confirming your payment and MapleWish is planting your leaf now…</p>
+    <div id="paymentSuccessDetails" class="payment-success-details hidden"></div>
+    <button class="button primary full hidden" id="showPurchasedLeaf" type="button">Show me my leaf →</button>
+    <button class="button ghost full" id="paymentBackToTree" type="button">Back to the tree</button>
   </dialog>
 
   <dialog id="freeEntryDialog" class="modal">

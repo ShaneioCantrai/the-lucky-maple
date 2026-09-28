@@ -6,6 +6,7 @@ const leafDialog = document.getElementById("leafDialog");
 const plantDialog = document.getElementById("plantDialog");
 const storyDialog = document.getElementById("storyDialog");
 const freeEntryDialog = document.getElementById("freeEntryDialog");
+const paymentSuccessDialog = document.getElementById("paymentSuccessDialog");
 const dialogBody = document.getElementById("leafDialogBody");
 const ambientLeaves = document.getElementById("ambientLeaves");
 const IS_FR = document.documentElement.lang.toLowerCase().startsWith("fr");
@@ -34,6 +35,7 @@ const plantMessagePlaceholders = IS_FR ? [
 ];
 let lastPlantNamePlaceholder = null;
 let lastPlantMessagePlaceholder = null;
+let selectedLeafSlot = null;
 
 function randomDifferent(options, previous) {
   if (options.length < 2) return options[0] || "";
@@ -51,8 +53,19 @@ function refreshPlantPlaceholders() {
   if (messageInput) messageInput.placeholder = lastPlantMessagePlaceholder;
   if (emailInput) emailInput.placeholder = "you@example.com";
 }
-function openPlantDialog() {
+function openPlantDialog(leafSlot = null) {
+  selectedLeafSlot = Number.isInteger(Number(leafSlot)) && Number(leafSlot) > 0 ? Number(leafSlot) : null;
   refreshPlantPlaceholders();
+  const selectedNote = document.getElementById("selectedLeafNote");
+  if (selectedNote) {
+    selectedNote.classList.toggle("hidden", !selectedLeafSlot);
+    selectedNote.textContent = selectedLeafSlot
+      ? tr(
+          `You selected leaf #${String(selectedLeafSlot).padStart(6, "0")}. It will be reserved while you check out.`,
+          `Vous avez choisi la feuille no ${String(selectedLeafSlot).padStart(6, "0")}. Elle sera réservée pendant le paiement.`
+        )
+      : "";
+  }
   plantDialog.showModal();
 }
 
@@ -139,10 +152,10 @@ function openLeaf(id) {
   if (!leaf) return;
   const number = String(id).padStart(6, "0");
   if (leaf.claimed) {
-    const contributionAmount = money(leaf.amountCents || 100).replace(".00 CAD", "");
+    const contributionAmount = money(leaf.amountCents || 200).replace(".00 CAD", "");
     dialogBody.innerHTML = `<span class="leaf-card-number">${tr('LEAF','FEUILLE')} #${number}</span>
       <h2>${escapeHtml(leaf.owner || tr("MapleWish Friend","Ami·e MapleWish"))}</h2>
-      <div class="leaf-contribution">🍁 ${contributionAmount} · ${tierName(leaf.amountCents || 100)}</div>
+      <div class="leaf-contribution">🍁 ${contributionAmount} · ${tierName(leaf.amountCents || 200)}</div>
       <div class="leaf-card-message">“${escapeHtml(leaf.message || tr("Planted on MapleWish.","Plantée sur MapleWish."))}”</div>
       <button class="button ghost full" id="copyLeafLink">${tr('Copy leaf link','Copier le lien de la feuille')}</button>`;
     dialogBody.querySelector("#copyLeafLink").addEventListener("click", () => navigator.clipboard?.writeText(`${location.origin}${location.pathname}#leaf-${id}`));
@@ -150,7 +163,7 @@ function openLeaf(id) {
     dialogBody.innerHTML = `<span class="leaf-card-number">${tr('LEAF','FEUILLE')} #${number}</span>
       <h2>${tr('This leaf is available.','Cette feuille est disponible.')}</h2><p>${tr('Plant it for $2, or choose $5, $10, or $25+ to grow a bigger leaf.','Plantez-la pour 2 $, ou choisissez 5 $, 10 $ ou 25 $+ pour faire pousser une feuille plus grande.')}</p>
       <button class="button primary full" id="claimThisLeaf">${tr('Choose your leaf size','Choisir la taille de votre feuille')}</button>`;
-    dialogBody.querySelector("#claimThisLeaf").addEventListener("click", () => { leafDialog.close(); openPlantDialog(); });
+    dialogBody.querySelector("#claimThisLeaf").addEventListener("click", () => { leafDialog.close(); openPlantDialog(leaf.id); });
   }
   leafDialog.showModal();
 }
@@ -169,7 +182,7 @@ document.querySelectorAll("[data-open]").forEach(button => {
     event.preventDefault();
     if (button.dataset.open === "plant") {
       if (storyDialog?.open) storyDialog.close();
-      openPlantDialog();
+      openPlantDialog(null);
     } else if (button.dataset.open === "story") {
       storyDialog?.showModal();
     } else {
@@ -246,6 +259,7 @@ document.getElementById("stripeCheckout")?.addEventListener("click", async event
         displayName: document.getElementById("plantName")?.value || "",
         message: document.getElementById("plantMessage")?.value || "",
         email: emailInput.value,
+        selectedLeafSlot,
         termsLanguage: IS_FR ? "fr-CA" : "en-CA",
         frenchTermsPresented: true,
         englishLanguageChoiceConfirmed: IS_FR ? false : Boolean(englishChoice?.checked),
@@ -312,7 +326,7 @@ createAmbientLeaves();
 document.addEventListener("visibilitychange", () => document.body.classList.toggle("motion-paused", document.hidden));
 
 const requestedLeaf = location.hash.match(/^#leaf-(\d+)$/);
-if (requestedLeaf) setTimeout(() => openLeaf(Number(requestedLeaf[1])), 180);
+const requestedLeafId = requestedLeaf ? Number(requestedLeaf[1]) : null;
 function hydrateCampaignLeaves(rows = []) {
   leaves.forEach(leaf => {
     leaf.claimed = false;
@@ -362,13 +376,13 @@ async function loadPublicData() {
       if (statsResponse.ok) {
         const stats = await statsResponse.json();
         updateLeafCount(stats.leavesPlanted);
-        document.getElementById("fundsRaised").textContent = money(stats.helpAllocatedCents);
+        document.getElementById("fundsRaised").textContent = money(stats.grossPaidCents ?? stats.helpAllocatedCents);
         document.getElementById("impactDelivered").textContent = money(stats.helpDeliveredCents).replace(" CAD", "");
         const legacyResponse = await fetch("/api/leaves", { headers: { Accept: "application/json" } });
         if (legacyResponse.ok) {
           const legacy = (await legacyResponse.json()).leaves || [];
           hydrateCampaignLeaves(legacy.map((leaf, index) => ({
-            leaf_slot: PURCHASE_LEAF_SLOT_ORDER[index] || index + 1, gross_cents: Number(leaf.gross_cents || 200),
+            leaf_slot: Number(leaf.leaf_slot) || PURCHASE_LEAF_SLOT_ORDER[index] || index + 1, gross_cents: Number(leaf.gross_cents || 200),
             display_name: leaf.display_name, message: leaf.message,
             sprite_variant: ((Number(leaf.id) * 7) % 12) + 1
           })));
@@ -391,30 +405,124 @@ async function loadPublicData() {
     }
   } catch { /* optional legacy contest data */ }
 }
-loadPublicData();
+function highlightLeaf(slot, openCard = false) {
+  const leaf = leaves[Number(slot) - 1];
+  if (!leaf?.element) return;
+  leaf.element.classList.remove("just-planted");
+  void leaf.element.getBoundingClientRect();
+  leaf.element.classList.add("just-planted");
+  leaf.element.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  history.replaceState({}, "", `${location.pathname}#leaf-${Number(slot)}`);
+  setTimeout(() => leaf.element?.classList.remove("just-planted"), 7000);
+  if (openCard) setTimeout(() => openLeaf(Number(slot)), 650);
+}
 
-function handlePaymentReturn() {
+function showPaymentResult(state, data = {}) {
+  if (!paymentSuccessDialog) return;
+  const title = document.getElementById("paymentSuccessTitle");
+  const message = document.getElementById("paymentSuccessMessage");
+  const details = document.getElementById("paymentSuccessDetails");
+  const showLeaf = document.getElementById("showPurchasedLeaf");
+  const backButton = document.getElementById("paymentBackToTree");
+
+  showLeaf?.classList.add("hidden");
+  details?.classList.add("hidden");
+
+  if (state === "paid") {
+    const slot = Number(data.leafSlot);
+    if (title) title.textContent = tr("Your leaf is planted.", "Votre feuille est plantée.");
+    if (message) message.textContent = tr(
+      "Payment confirmed. Your MapleWish leaf is now part of the tree.",
+      "Paiement confirmé. Votre feuille MapleWish fait maintenant partie de l’arbre."
+    );
+    if (details) {
+      details.classList.remove("hidden");
+      details.innerHTML = `<b>${tr("Leaf","Feuille")} #${String(slot).padStart(6, "0")}</b><span>${money(data.amountTotalCents)}</span><small>${tr("Direct help allocated","Aide directe affectée")}: ${money(data.helpAllocationCents)}</small>`;
+    }
+    if (showLeaf && slot) {
+      showLeaf.classList.remove("hidden");
+      showLeaf.dataset.leafSlot = String(slot);
+      showLeaf.textContent = tr("Show me my leaf →", "Voir ma feuille →");
+    }
+    if (backButton) backButton.textContent = tr("Back to the tree", "Retour à l’arbre");
+    return;
+  }
+
+  if (state === "failed" || state === "expired") {
+    if (title) title.textContent = tr("Payment wasn’t completed.", "Le paiement n’a pas été complété.");
+    if (message) message.textContent = tr(
+      "No leaf was planted. You can return to the tree and try again.",
+      "Aucune feuille n’a été plantée. Vous pouvez retourner à l’arbre et réessayer."
+    );
+    if (backButton) backButton.textContent = tr("Back to the tree", "Retour à l’arbre");
+    return;
+  }
+
+  if (title) title.textContent = tr("Payment received.", "Paiement reçu.");
+  if (message) message.textContent = tr(
+    "Stripe is confirming your payment and MapleWish is planting your leaf now…",
+    "Stripe confirme votre paiement et MapleWish plante votre feuille maintenant…"
+  );
+  if (backButton) backButton.textContent = tr("Back to the tree", "Retour à l’arbre");
+}
+
+async function handlePaymentReturn() {
   const params = new URLSearchParams(location.search);
   if (params.get("payment") !== "success") return;
 
+  const sessionId = params.get("session_id") || "";
   params.delete("payment");
   params.delete("session_id");
   const cleanUrl = `${location.pathname}${params.toString() ? `?${params.toString()}` : ""}${location.hash}`;
   history.replaceState({}, "", cleanUrl);
 
-  openPlantDialog();
-  const status = document.getElementById("plantStatus");
-  if (status) {
-    status.textContent = tr(
-      "Payment received. Stripe is confirming it now; your leaf should appear on the tree shortly.",
-      "Paiement reçu. Stripe le confirme maintenant; votre feuille devrait apparaître sous peu."
-    );
+  showPaymentResult("processing");
+  if (paymentSuccessDialog && !paymentSuccessDialog.open) paymentSuccessDialog.showModal();
+
+  if (!sessionId) return;
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    try {
+      const response = await fetch(`/api/checkout/status?session_id=${encodeURIComponent(sessionId)}`, {
+        headers: { Accept: "application/json" },
+      });
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.status === "paid") {
+        await loadPublicData();
+        showPaymentResult("paid", data);
+        return;
+      }
+      if (response.ok && ["failed", "expired"].includes(data.status)) {
+        showPaymentResult(data.status, data);
+        return;
+      }
+    } catch { /* retry briefly while webhook catches up */ }
+    await new Promise(resolve => setTimeout(resolve, 750));
   }
 
-  setTimeout(loadPublicData, 1200);
-  setTimeout(loadPublicData, 3500);
+  const message = document.getElementById("paymentSuccessMessage");
+  if (message) {
+    message.textContent = tr(
+      "Your payment is still being confirmed. Your leaf will appear automatically once Stripe finishes.",
+      "Votre paiement est toujours en cours de confirmation. Votre feuille apparaîtra automatiquement dès que Stripe aura terminé."
+    );
+  }
 }
-handlePaymentReturn();
+
+document.getElementById("showPurchasedLeaf")?.addEventListener("click", () => {
+  const slot = Number(document.getElementById("showPurchasedLeaf")?.dataset.leafSlot || 0);
+  paymentSuccessDialog?.close();
+  if (slot) highlightLeaf(slot, true);
+});
+document.getElementById("paymentBackToTree")?.addEventListener("click", () => {
+  paymentSuccessDialog?.close();
+  document.getElementById("home")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+loadPublicData().then(() => {
+  if (requestedLeafId) openLeaf(requestedLeafId);
+  handlePaymentReturn();
+});
 
 function isQuebecProvince(value) {
   const normalized = String(value || '').trim().toLowerCase();

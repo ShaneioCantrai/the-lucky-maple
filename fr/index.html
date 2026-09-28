@@ -189,6 +189,7 @@
     <span class="eyebrow">PLANTEZ VOTRE FEUILLE</span>
     <h2>Choisissez la taille de votre feuille.</h2>
     <p>Chaque contribution plante une feuille. Les contributions plus importantes font pousser une feuille plus grande sur l’arbre.</p>
+    <p id="selectedLeafNote" class="selected-leaf-note hidden"></p>
     <div class="leaf-tier-picker" role="group" aria-label="Choisir le montant de la contribution">
       <button type="button" class="leaf-tier-option selected" data-leaf-amount="2"><b>2 $</b><span>Feuille</span></button>
       <button type="button" class="leaf-tier-option" data-leaf-amount="5"><b>5 $</b><span>Plus grande</span></button>
@@ -201,6 +202,17 @@
     <label>Courriel pour le paiement Stripe et la récupération de la feuille<input id="plantEmail" type="email" placeholder="vous@exemple.ca" /></label>
     <button class="button primary full" id="stripeCheckout">Continuer vers le paiement sécurisé · 2 $ CAD</button>
     <small>Payez le montant de votre choix à partir de 2 $ CAD. Les montants proposés sont 2 $, 5 $, 10 $ et 25 $+. Stripe héberge le paiement sécurisé; 50 % du montant payé est affecté à l’aide directe. En continuant, vous acceptez les <a href="/fr/contribution-terms.html" target="_blank" rel="noopener">Conditions de contribution</a> et les <a href="/fr/terms.html" target="_blank" rel="noopener">Conditions d’utilisation</a>.</small>
+  </dialog>
+
+  <dialog id="paymentSuccessDialog" class="modal payment-success-modal">
+    <button class="close" data-close aria-label="Fermer">×</button>
+    <div class="payment-success-icon" aria-hidden="true">✓</div>
+    <span class="eyebrow">PAIEMENT MAPLEWISH</span>
+    <h2 id="paymentSuccessTitle">Paiement reçu.</h2>
+    <p id="paymentSuccessMessage">Stripe confirme votre paiement et MapleWish plante votre feuille maintenant…</p>
+    <div id="paymentSuccessDetails" class="payment-success-details hidden"></div>
+    <button class="button primary full hidden" id="showPurchasedLeaf" type="button">Voir ma feuille →</button>
+    <button class="button ghost full" id="paymentBackToTree" type="button">Retour à l’arbre</button>
   </dialog>
 
   <dialog id="freeEntryDialog" class="modal">
