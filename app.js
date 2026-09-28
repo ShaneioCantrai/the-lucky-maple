@@ -155,8 +155,12 @@ function clearPurchasedLeafHalos() {
 
 function renderPurchasedLeafHalos() {
   clearPurchasedLeafHalos();
+
   for (const leaf of leaves.filter(item => item.claimed && item.element)) {
     const radius = Math.max(24, leaf.size * 0.72);
+
+    // Keep the purchased leaf itself above overlapping decorative/available leaves.
+    leafLayer.appendChild(leaf.element);
 
     const outer = document.createElementNS(NS, "circle");
     outer.setAttribute("cx", leaf.x);
@@ -172,8 +176,21 @@ function renderPurchasedLeafHalos() {
     inner.setAttribute("class", "purchased-leaf-halo purchased-leaf-halo-inner");
     inner.setAttribute("aria-hidden", "true");
 
-    leafLayer.insertBefore(outer, leafLayer.firstChild);
-    leafLayer.insertBefore(inner, leafLayer.firstChild);
+    // Transparent hit target on top of every overlapping leaf. Clicking the halo
+    // therefore always opens the purchased leaf that the halo represents.
+    const hit = document.createElementNS(NS, "circle");
+    hit.setAttribute("cx", leaf.x);
+    hit.setAttribute("cy", leaf.y);
+    hit.setAttribute("r", radius + 14);
+    hit.setAttribute("class", "purchased-leaf-halo purchased-leaf-halo-hit");
+    hit.dataset.leafId = String(leaf.id);
+    hit.setAttribute("tabindex", "0");
+    hit.setAttribute("role", "button");
+    hit.setAttribute("aria-label", tr("Open purchased leaf", "Ouvrir la feuille achetée") + " #" + String(leaf.id).padStart(6, "0"));
+
+    leafLayer.appendChild(outer);
+    leafLayer.appendChild(inner);
+    leafLayer.appendChild(hit);
   }
 }
 
@@ -241,12 +258,30 @@ function openLeaf(id) {
   leafDialog.showModal();
 }
 leafLayer.addEventListener("click", event => {
+  const haloTarget = event.target.closest?.(".purchased-leaf-halo-hit");
+  if (haloTarget) {
+    event.preventDefault();
+    event.stopPropagation();
+    openLeaf(Number(haloTarget.dataset.leafId));
+    return;
+  }
+
   const target = event.target.closest?.(".leaf");
   if (target) openLeaf(Number(target.dataset.leafId));
 });
 leafLayer.addEventListener("keydown", event => {
-  if ((event.key === "Enter" || event.key === " ") && event.target.matches?.(".leaf")) {
-    event.preventDefault(); openLeaf(Number(event.target.dataset.leafId));
+  if (event.key !== "Enter" && event.key !== " ") return;
+
+  const haloTarget = event.target.closest?.(".purchased-leaf-halo-hit");
+  if (haloTarget) {
+    event.preventDefault();
+    openLeaf(Number(haloTarget.dataset.leafId));
+    return;
+  }
+
+  if (event.target.matches?.(".leaf")) {
+    event.preventDefault();
+    openLeaf(Number(event.target.dataset.leafId));
   }
 });
 

@@ -162,6 +162,18 @@ a { color: inherit; }
   transform-box: fill-box;
   transform-origin: center;
 }
+.purchased-leaf-halo-hit {
+  pointer-events: all;
+  fill: rgba(255,255,255,.001);
+  stroke: transparent;
+  cursor: pointer;
+  outline: none;
+}
+.purchased-leaf-halo-hit:focus-visible {
+  stroke: rgba(255,255,255,.98);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 8px rgba(255,225,90,.95));
+}
 .purchased-leaf-halo-inner {
   stroke: rgba(255,224,76,.98);
   stroke-width: 5;
