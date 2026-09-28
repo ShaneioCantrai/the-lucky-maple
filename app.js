@@ -24,12 +24,12 @@ const plantNamePlaceholders = IS_FR ? [
 const plantMessagePlaceholders = IS_FR ? [
   "Je n’arrive pas à croire que j’ai acheté ça.", "Ça semblait financièrement responsable.", "Moins cher que de nommer une étoile.",
   "Dites à mon comptable que c’était nécessaire.", "Je suis venu. J’ai vu. J’ai planté.", "Historiens du futur : de rien.",
-  "Un dollar. Zéro regret.", "Apparemment, je possède maintenant du feuillage Internet.", "Ajoutez ça à mon dossier permanent.",
+  "Deux dollars. Zéro regret.", "Apparemment, je possède maintenant du feuillage Internet.", "Ajoutez ça à mon dossier permanent.",
   "Maman, regarde! J’ai une feuille.", "On m’avait promis du sirop d’érable.", "Ça semblait important à 2 h du matin."
 ] : [
   "I can't believe I bought this.", "This felt financially responsible.", "Cheaper than naming a star.",
   "Please tell my accountant this was necessary.", "I came. I saw. I planted.", "Future historians: you're welcome.",
-  "One dollar. Zero regrets.", "Apparently I own internet foliage now.", "Put this on my permanent record.",
+  "Two dollars. Zero regrets.", "Apparently I own internet foliage now.", "Put this on my permanent record.",
   "Mom, look! I own a leaf.", "I was told there'd be maple syrup.", "This seemed important at 2AM."
 ];
 let lastPlantNamePlaceholder = null;
@@ -65,14 +65,14 @@ function leafTierForAmount(cents) {
   if (dollars >= 25) return 25;
   if (dollars >= 10) return 10;
   if (dollars >= 5) return 5;
-  return 1;
+  return 2;
 }
 function leafScaleForAmount(cents) {
-  return ({ 1: 1, 5: 1.25, 10: 1.5, 25: 1.85 })[leafTierForAmount(cents)];
+  return ({ 2: 1, 5: 1.25, 10: 1.5, 25: 1.85 })[leafTierForAmount(cents)];
 }
 function tierName(cents) {
-  const en = { 1: 'Leaf', 5: 'Bigger leaf', 10: 'Large leaf', 25: 'Largest leaf' };
-  const fr = { 1: 'Feuille', 5: 'Feuille plus grande', 10: 'Grande feuille', 25: 'Plus grande feuille' };
+  const en = { 2: 'Leaf', 5: 'Bigger leaf', 10: 'Large leaf', 25: 'Largest leaf' };
+  const fr = { 2: 'Feuille', 5: 'Feuille plus grande', 10: 'Grande feuille', 25: 'Plus grande feuille' };
   return (IS_FR ? fr : en)[leafTierForAmount(cents)];
 }
 const random = seeded(8675309);
@@ -148,7 +148,7 @@ function openLeaf(id) {
     dialogBody.querySelector("#copyLeafLink").addEventListener("click", () => navigator.clipboard?.writeText(`${location.origin}${location.pathname}#leaf-${id}`));
   } else {
     dialogBody.innerHTML = `<span class="leaf-card-number">${tr('LEAF','FEUILLE')} #${number}</span>
-      <h2>${tr('This leaf is available.','Cette feuille est disponible.')}</h2><p>${tr('Plant it for $1, or choose $5, $10, or $25+ to grow a bigger leaf.','Plantez-la pour 1 $, ou choisissez 5 $, 10 $ ou 25 $+ pour faire pousser une feuille plus grande.')}</p>
+      <h2>${tr('This leaf is available.','Cette feuille est disponible.')}</h2><p>${tr('Plant it for $2, or choose $5, $10, or $25+ to grow a bigger leaf.','Plantez-la pour 2 $, ou choisissez 5 $, 10 $ ou 25 $+ pour faire pousser une feuille plus grande.')}</p>
       <button class="button primary full" id="claimThisLeaf">${tr('Choose your leaf size','Choisir la taille de votre feuille')}</button>`;
     dialogBody.querySelector("#claimThisLeaf").addEventListener("click", () => { leafDialog.close(); openPlantDialog(); });
   }
@@ -185,7 +185,7 @@ document.querySelectorAll("dialog").forEach(dialog => {
   });
 });
 
-let selectedLeafAmount = 1;
+let selectedLeafAmount = 2;
 function selectedContributionAmount() {
   if (selectedLeafAmount !== 25) return selectedLeafAmount;
   const custom = Math.max(25, Number(document.getElementById("plantAmount")?.value || 25));
@@ -197,7 +197,10 @@ function refreshContributionPicker() {
   });
   document.getElementById("customAmountLabel")?.classList.toggle("hidden", selectedLeafAmount !== 25);
   const amount = selectedContributionAmount();
-  document.getElementById("mockCheckout").textContent = `${tr('Continue','Continuer')} · $${amount.toLocaleString(LOCALE, { maximumFractionDigits: 2 })} CAD`;
+  const checkoutButton = document.getElementById("stripeCheckout");
+  if (checkoutButton && !checkoutButton.disabled) {
+    checkoutButton.textContent = IS_FR ? `${tr('Continue to secure checkout','Continuer vers le paiement sécurisé')} · ${amount.toLocaleString(LOCALE, { maximumFractionDigits: 2 })} $ CAD` : `${tr('Continue to secure checkout','Continuer vers le paiement sécurisé')} · $${amount.toLocaleString(LOCALE, { maximumFractionDigits: 2 })} CAD`;
+  }
 }
 document.querySelectorAll("[data-leaf-amount]").forEach(button => {
   button.addEventListener("click", () => {
@@ -207,16 +210,55 @@ document.querySelectorAll("[data-leaf-amount]").forEach(button => {
 });
 document.getElementById("plantAmount")?.addEventListener("input", refreshContributionPicker);
 refreshContributionPicker();
-document.getElementById("mockCheckout").addEventListener("click", event => {
+document.getElementById("stripeCheckout")?.addEventListener("click", async event => {
   const status = document.getElementById("plantStatus");
-  if (!IS_FR && document.getElementById("plantEnglishChoice") && !document.getElementById("plantEnglishChoice").checked) {
+  const button = event.currentTarget;
+  const emailInput = document.getElementById("plantEmail");
+  const englishChoice = document.getElementById("plantEnglishChoice");
+
+  if (!IS_FR && englishChoice && !englishChoice.checked) {
     if (status) status.textContent = "Please expressly choose to proceed under the English terms after the French versions are presented.";
     return;
   }
-  if (status) status.textContent = "";
+  if (!emailInput?.checkValidity()) {
+    emailInput?.reportValidity();
+    if (status) status.textContent = tr("Enter a valid email for your Stripe receipt and leaf recovery.", "Entrez une adresse courriel valide pour votre reçu Stripe et la récupération de votre feuille.");
+    return;
+  }
+
   const amount = selectedContributionAmount();
-  event.currentTarget.textContent = `${tr('Payment wiring comes next','Le branchement du paiement vient ensuite')} · $${amount.toLocaleString(LOCALE, { maximumFractionDigits: 2 })}`;
-  setTimeout(refreshContributionPicker, 1600);
+  const amountCents = Math.round(amount * 100);
+  if (!Number.isInteger(amountCents) || amountCents < 200) {
+    if (status) status.textContent = tr("The minimum leaf amount is $2 CAD.", "Le montant minimum pour une feuille est de 2 $ CAD.");
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = tr("Opening secure Stripe checkout…", "Ouverture du paiement Stripe sécurisé…");
+  if (status) status.textContent = "";
+
+  try {
+    const response = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        amountCents,
+        displayName: document.getElementById("plantName")?.value || "",
+        message: document.getElementById("plantMessage")?.value || "",
+        email: emailInput.value,
+        termsLanguage: IS_FR ? "fr-CA" : "en-CA",
+        frenchTermsPresented: true,
+        englishLanguageChoiceConfirmed: IS_FR ? false : Boolean(englishChoice?.checked),
+      }),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.checkoutUrl) throw new Error(data.error || "Checkout could not be started.");
+    window.location.assign(data.checkoutUrl);
+  } catch (error) {
+    if (status) status.textContent = error.message || tr("Checkout could not be started. Please try again.", "Le paiement n’a pas pu démarrer. Veuillez réessayer.");
+    button.disabled = false;
+    refreshContributionPicker();
+  }
 });
 
 const SHARE_ID_KEY = "luckyMapleShareId";
@@ -287,7 +329,7 @@ function hydrateCampaignLeaves(rows = []) {
     const leaf = leaves[slot - 1];
     if (!leaf) continue;
     leaf.claimed = true;
-    leaf.amountCents = Number(row.gross_cents || 100);
+    leaf.amountCents = Number(row.gross_cents || 200);
     leaf.size = leaf.baseSize * leafScaleForAmount(leaf.amountCents);
     leaf.owner = row.display_name || tr("Anonymous Canadian","Canadien·ne anonyme");
     leaf.message = row.message || tr("Planted on MapleWish.","Plantée sur MapleWish.");
@@ -326,7 +368,7 @@ async function loadPublicData() {
         if (legacyResponse.ok) {
           const legacy = (await legacyResponse.json()).leaves || [];
           hydrateCampaignLeaves(legacy.map((leaf, index) => ({
-            leaf_slot: PURCHASE_LEAF_SLOT_ORDER[index] || index + 1, gross_cents: 100,
+            leaf_slot: PURCHASE_LEAF_SLOT_ORDER[index] || index + 1, gross_cents: Number(leaf.gross_cents || 200),
             display_name: leaf.display_name, message: leaf.message,
             sprite_variant: ((Number(leaf.id) * 7) % 12) + 1
           })));
@@ -350,6 +392,29 @@ async function loadPublicData() {
   } catch { /* optional legacy contest data */ }
 }
 loadPublicData();
+
+function handlePaymentReturn() {
+  const params = new URLSearchParams(location.search);
+  if (params.get("payment") !== "success") return;
+
+  params.delete("payment");
+  params.delete("session_id");
+  const cleanUrl = `${location.pathname}${params.toString() ? `?${params.toString()}` : ""}${location.hash}`;
+  history.replaceState({}, "", cleanUrl);
+
+  openPlantDialog();
+  const status = document.getElementById("plantStatus");
+  if (status) {
+    status.textContent = tr(
+      "Payment received. Stripe is confirming it now; your leaf should appear on the tree shortly.",
+      "Paiement reçu. Stripe le confirme maintenant; votre feuille devrait apparaître sous peu."
+    );
+  }
+
+  setTimeout(loadPublicData, 1200);
+  setTimeout(loadPublicData, 3500);
+}
+handlePaymentReturn();
 
 function isQuebecProvince(value) {
   const normalized = String(value || '').trim().toLowerCase();

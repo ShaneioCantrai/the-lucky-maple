@@ -1,6 +1,6 @@
 # MapleWish
 
-A deliberately simple internet object: one enormous interactive maple tree, permanent $1 leaves, and a separately funded Canada-only weekly promotional giveaway.
+A deliberately simple internet object: one enormous interactive maple tree, pay-what-you-want leaves from $2 CAD, and a separately funded Canada-only weekly promotional giveaway.
 
 ## Product rule
 
@@ -11,7 +11,7 @@ The tree **is** the website. No dashboard, feed, profile system, or mandatory ac
 1. Land directly on the tree.
 2. Drag / zoom around it.
 3. Click a claimed leaf to see its public card.
-4. Click an available leaf to plant it for $1 CAD.
+4. Click an available leaf to plant it from $2 CAD.
 5. Canadian residents can separately enter the weekly giveaway without buying anything.
 
 ## Prototype
@@ -23,7 +23,7 @@ Current prototype includes:
 - 1,000+ clickable leaves
 - pan / wheel zoom / zoom controls
 - claimed leaf cards and shareable leaf IDs
-- mock $1 plant flow
+- Stripe pay-what-you-want plant flow
 - separate free giveaway entry flow
 - responsive mobile layout
 
@@ -61,7 +61,7 @@ The `rules.html` included here is a product placeholder, not final legal contest
 The initial static tree prototype is preserved as-is. The backend foundation adds PostgreSQL-backed ownership, weekly contest entries, direct-help cases, public impact statistics and an append-only help-fund ledger.
 
 Current mission model:
-- each paid leaf remains $1 CAD;
+- each paid leaf starts at $2 CAD with pay-what-you-want checkout;
 - exactly 50¢ per paid leaf is allocated to direct help for neurodivergent Canadians;
 - direct assistance is needs-based and separate from the giveaway;
 - weekly giveaway prizes are funded separately by the company/founder/sponsors;

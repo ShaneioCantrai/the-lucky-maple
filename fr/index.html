@@ -26,7 +26,7 @@
       <div class="top-actions">
         <div class="language-switch" aria-label="Langue"><span class="active">Français</span><a href="/">English</a></div>
         <button class="button ghost" data-share="native">Partager cet arbre</button>
-        <button class="button primary" data-open="plant">Planter une feuille · 1 $+</button>
+        <button class="button primary" data-open="plant">Planter une feuille · 2 $+</button>
       </div>
     </header>
 
@@ -44,7 +44,7 @@
       </div>
       <section class="hero-copy" aria-labelledby="heroTitle">
         <h1 id="heroTitle">Petite feuille.<br><span>Grand changement.</span></h1>
-        <p>Plantez une feuille pour <b>1 $</b>. Choisissez <b>5 $</b>, <b>10 $</b> ou <b>25 $+</b> et votre feuille grandira aussi. Chaque contribution fait grandir notre arbre et notre communauté.</p>
+        <p>Plantez une feuille pour <b>2 $</b>, choisissez <b>5 $</b>, <b>10 $</b> ou <b>25 $+</b>, ou modifiez le montant au paiement sécurisé. Les contributions plus élevées font aussi pousser une feuille plus grande.</p>
       </section>
 
       <section class="share-card" aria-label="Partager cet arbre">
@@ -82,7 +82,7 @@
       </div>
 
       <section class="hero-steps" id="how" aria-label="Comment MapleWish fonctionne">
-        <div><span class="step-icon">🍁</span><p><b>1. Plantez une feuille.</b><small>Choisissez une feuille et ajoutez votre nom pour 1 $.</small></p></div>
+        <div><span class="step-icon">🍁</span><p><b>1. Plantez une feuille.</b><small>Choisissez une feuille et ajoutez votre nom pour 2 $ ou plus.</small></p></div>
         <div><span class="step-icon">❤</span><p><b>2. Soutenez un impact réel.</b><small>50 % de chaque feuille payée va à l’aide directe pour des personnes neurodivergentes au Canada.</small></p></div>
         <div><span class="step-icon">🏆</span><p><b>3. Tentez votre chance.</b><small>Les résidents canadiens peuvent participer gratuitement au concours hebdomadaire.</small></p></div>
       </section>
@@ -190,17 +190,17 @@
     <h2>Choisissez la taille de votre feuille.</h2>
     <p>Chaque contribution plante une feuille. Les contributions plus importantes font pousser une feuille plus grande sur l’arbre.</p>
     <div class="leaf-tier-picker" role="group" aria-label="Choisir le montant de la contribution">
-      <button type="button" class="leaf-tier-option selected" data-leaf-amount="1"><b>1 $</b><span>Feuille</span></button>
+      <button type="button" class="leaf-tier-option selected" data-leaf-amount="2"><b>2 $</b><span>Feuille</span></button>
       <button type="button" class="leaf-tier-option" data-leaf-amount="5"><b>5 $</b><span>Plus grande</span></button>
       <button type="button" class="leaf-tier-option" data-leaf-amount="10"><b>10 $</b><span>Grande</span></button>
       <button type="button" class="leaf-tier-option" data-leaf-amount="25"><b>25 $+</b><span>La plus grande</span></button>
     </div>
-    <label id="customAmountLabel" class="custom-amount hidden">Montant · minimum 25 $<input id="plantAmount" type="number" min="25" step="1" value="25" inputmode="decimal" /></label>
+    <label id="customAmountLabel" class="custom-amount hidden">Montant · minimum 25 $<input id="plantAmount" type="number" min="25" step="0.01" value="25" inputmode="decimal" /></label>
     <label>Nom affiché<input id="plantName" maxlength="28" placeholder="Gros Dave" /></label>
     <label>Message sur la feuille<input id="plantMessage" maxlength="60" placeholder="Je n’arrive pas à croire que j’ai acheté ça." /></label>
-    <label>Courriel pour le reçu et la récupération<input id="plantEmail" type="email" placeholder="vous@exemple.ca" /></label>
-    <button class="button primary full" id="mockCheckout">Continuer · 1 $ CAD</button>
-    <small>Une contribution plante une feuille. À partir de 25 $, la plus grande taille de feuille est utilisée. En continuant, vous acceptez les <a href="/fr/contribution-terms.html" target="_blank" rel="noopener">Conditions de contribution</a> et les <a href="/fr/terms.html" target="_blank" rel="noopener">Conditions d’utilisation</a>. Consultez la <a href="/fr/refunds.html" target="_blank" rel="noopener">Politique de remboursement</a>. Les paiements ne sont pas encore branchés dans ce prototype.</small>
+    <label>Courriel pour le paiement Stripe et la récupération de la feuille<input id="plantEmail" type="email" placeholder="vous@exemple.ca" /></label>
+    <button class="button primary full" id="stripeCheckout">Continuer vers le paiement sécurisé · 2 $ CAD</button>
+    <small>Payez le montant de votre choix à partir de 2 $ CAD. Les montants proposés sont 2 $, 5 $, 10 $ et 25 $+. Stripe héberge le paiement sécurisé; 50 % du montant payé est affecté à l’aide directe. En continuant, vous acceptez les <a href="/fr/contribution-terms.html" target="_blank" rel="noopener">Conditions de contribution</a> et les <a href="/fr/terms.html" target="_blank" rel="noopener">Conditions d’utilisation</a>.</small>
   </dialog>
 
   <dialog id="freeEntryDialog" class="modal">

@@ -1,7 +1,7 @@
 {
   "name": "luckymaple",
   "version": "1.0.0",
-  "description": "A deliberately simple internet object: one enormous interactive maple tree, permanent $1 leaves, and a separately funded Canada-only weekly promotional giveaway.",
+  "description": "A deliberately simple internet object: one enormous interactive maple tree, pay-what-you-want leaves from $2 CAD, and a separately funded Canada-only weekly promotional giveaway.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",

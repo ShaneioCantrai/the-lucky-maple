@@ -90,5 +90,5 @@ export const mockPurchaseSchema = z.object({
     displayName: z.string().trim().min(1).max(40),
     message: z.string().trim().max(120).optional().default(''),
     colour: z.enum(['red', 'orange', 'gold', 'green']).default('red'),
-  })).min(1).max(100),
+  })).min(1).max(1),
 });

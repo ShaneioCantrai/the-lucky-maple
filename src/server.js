@@ -9,6 +9,7 @@ import multer from 'multer';
 import sharp from 'sharp';
 import { rateLimit } from 'express-rate-limit';
 import { pool, dbHealth, withTransaction } from './db.js';
+import { registerStripeCheckoutRoute, registerStripeWebhookRoute } from './stripe.js';
 import { emailDeliveryConfigured, sendPasswordChangedEmail, sendPasswordResetEmail, sendVerificationEmail } from './mailer.js';
 import { applicantCredentialsSchema, applicantEmailSchema, contactRequestSchema, contestEntrySchema, helpApplicationDraftSchema, helpApplicationSchema, mockPurchaseSchema, passwordResetSchema } from './schemas.js';
 
@@ -32,8 +33,10 @@ if (process.env.NODE_ENV === 'production' && identitySecret === 'development-onl
 
 app.set('trust proxy', 1);
 app.use(helmet({ contentSecurityPolicy: false }));
+registerStripeWebhookRoute(app);
 app.use(express.json({ limit: '64kb' }));
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, limit: 100 }));
+registerStripeCheckoutRoute(app);
 app.get(['/', '/index.html'], (_req, res) => res.sendFile(path.join(repoRoot, 'index.html')));
 for (const legalPage of ['rules','privacy','terms','contribution-terms','refunds','applicant-privacy','application-terms','story-consent']) {
   app.get(`/${legalPage}.html`, (_req, res) => res.sendFile(path.join(repoRoot, `${legalPage}.html`)));
@@ -222,8 +225,12 @@ app.get('/api/leaves', async (req, res, next) => {
   try {
     const limit = Math.min(Number(req.query.limit || 2000), 5000);
     const result = await pool.query(
-      `SELECT id, display_name, message, colour, public_slug, planted_at
-       FROM leaves WHERE retired_at IS NULL ORDER BY id ASC LIMIT $1`, [limit]);
+      `SELECT l.id, l.display_name, l.message, l.colour, l.public_slug, l.planted_at,
+              o.amount_total_cents AS gross_cents
+       FROM leaves l
+       JOIN leaf_orders o ON o.id = l.order_id
+       WHERE l.retired_at IS NULL
+       ORDER BY l.id ASC LIMIT $1`, [limit]);
     res.json({ leaves: result.rows });
   } catch (error) { next(error); }
 });
@@ -705,7 +712,7 @@ app.post('/api/dev/mock-purchase', async (req, res, next) => {
          (status, purchaser_email, leaf_count, amount_total_cents,
           help_allocation_cents, payment_provider, payment_reference, paid_at)
          VALUES ('paid',$1,$2,$3,$4,'mock',$5,now()) RETURNING id`,
-        [purchase.email.toLowerCase(), count, count * 100, count * 50,
+        [purchase.email.toLowerCase(), count, count * 200, count * 100,
          `mock-${crypto.randomUUID()}`]);
       const orderId = orderResult.rows[0].id;
       const planted = [];
@@ -719,8 +726,8 @@ app.post('/api/dev/mock-purchase', async (req, res, next) => {
       await client.query(
         `INSERT INTO help_fund_ledger (entry_type, amount_cents, order_id, note)
          VALUES ('leaf_allocation',$1,$2,$3)`,
-        [count * 50, orderId, `50 cents allocated for each of ${count} mock leaf purchases`]);
-      return { orderId, planted, helpAllocatedCents: count * 50 };
+        [count * 100, orderId, `50% allocated for each of ${count} mock $2 leaf purchases`]);
+      return { orderId, planted, helpAllocatedCents: count * 100 };
     });
     res.status(201).json(result);
   } catch (error) { next(error); }
