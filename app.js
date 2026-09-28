@@ -148,18 +148,61 @@ function updateLeafCount(value = leaves.filter(leaf => leaf.claimed).length) {
 updateLeafCount();
 
 const showPurchasedLeavesButton = document.getElementById("showPurchasedLeaves");
+
+function clearPurchasedLeafHalos() {
+  leafLayer.querySelectorAll(".purchased-leaf-halo").forEach(node => node.remove());
+}
+
+function renderPurchasedLeafHalos() {
+  clearPurchasedLeafHalos();
+  for (const leaf of leaves.filter(item => item.claimed && item.element)) {
+    const radius = Math.max(24, leaf.size * 0.72);
+
+    const outer = document.createElementNS(NS, "circle");
+    outer.setAttribute("cx", leaf.x);
+    outer.setAttribute("cy", leaf.y);
+    outer.setAttribute("r", radius + 9);
+    outer.setAttribute("class", "purchased-leaf-halo purchased-leaf-halo-outer");
+    outer.setAttribute("aria-hidden", "true");
+
+    const inner = document.createElementNS(NS, "circle");
+    inner.setAttribute("cx", leaf.x);
+    inner.setAttribute("cy", leaf.y);
+    inner.setAttribute("r", radius);
+    inner.setAttribute("class", "purchased-leaf-halo purchased-leaf-halo-inner");
+    inner.setAttribute("aria-hidden", "true");
+
+    leafLayer.insertBefore(outer, leafLayer.firstChild);
+    leafLayer.insertBefore(inner, leafLayer.firstChild);
+  }
+}
+
+function focusFirstPurchasedLeaf() {
+  const leaf = leaves.find(item => item.claimed && item.element);
+  if (!leaf) return;
+  leaf.element.classList.remove("just-planted");
+  void leaf.element.getBoundingClientRect();
+  leaf.element.classList.add("just-planted");
+  leaf.element.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  setTimeout(() => leaf.element?.classList.remove("just-planted"), 5000);
+}
+
 function setPurchasedLeafHighlight(active) {
   leafLayer.classList.toggle("show-purchased-leaves", active);
+  if (active) renderPurchasedLeafHalos();
+  else clearPurchasedLeafHalos();
+
   if (!showPurchasedLeavesButton) return;
   showPurchasedLeavesButton.setAttribute("aria-pressed", active ? "true" : "false");
   showPurchasedLeavesButton.textContent = active
-    ? tr("Hide highlights", "Masquer les surbrillances")
-    : tr("Show leaves", "Voir les feuilles");
+    ? tr("Hide leaf halos", "Masquer les halos")
+    : tr("Show purchased leaves", "Voir les feuilles achetées");
 }
+
 showPurchasedLeavesButton?.addEventListener("click", () => {
   const hasPurchasedLeaves = leaves.some(leaf => leaf.claimed);
   if (!hasPurchasedLeaves) {
-    const original = tr("Show leaves", "Voir les feuilles");
+    const original = tr("Show purchased leaves", "Voir les feuilles achetées");
     showPurchasedLeavesButton.textContent = tr("No purchased leaves yet", "Aucune feuille achetée pour le moment");
     setTimeout(() => {
       if (showPurchasedLeavesButton.getAttribute("aria-pressed") !== "true") {
@@ -173,6 +216,7 @@ showPurchasedLeavesButton?.addEventListener("click", () => {
   setPurchasedLeafHighlight(nextActive);
   if (nextActive) {
     document.getElementById("home")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setTimeout(focusFirstPurchasedLeaf, 320);
   }
 });
 
@@ -381,6 +425,7 @@ function hydrateCampaignLeaves(rows = []) {
     filled += 1;
   }
   updateLeafCount(filled);
+  if (leafLayer.classList.contains("show-purchased-leaves")) renderPurchasedLeafHalos();
 }
 
 async function loadPublicData() {
