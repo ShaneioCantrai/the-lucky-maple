@@ -134,6 +134,27 @@ a { color: inherit; }
 .impact-grid b { display: block; font-size: 16px; }
 .impact-grid span { display: block; margin-top: 2px; color: #705e4d; font-size: 10px; line-height: 1.15; }
 .impact-card > small { display: block; margin-top: 10px; padding: 6px 8px; border-radius: 999px; background: #f8dda2; font-family: 'Chewy', cursive; font-size: 13px; }
+.impact-show-leaves {
+  width: 100%; margin-top: 8px; padding: 8px 11px; border: 1px solid #c5af82; border-radius: 999px;
+  background: rgba(255,255,255,.72); color: var(--green); font-weight: 900; font-size: 12px; cursor: pointer;
+  transition: transform .14s ease, background .14s ease, color .14s ease, border-color .14s ease;
+}
+.impact-show-leaves:hover { transform: translateY(-1px); background: #fffdf7; border-color: #9f8659; }
+.impact-show-leaves[aria-pressed="true"] { background: var(--green); color: white; border-color: var(--green); }
+
+#leafLayer.show-purchased-leaves .leaf.available { opacity: .006; }
+#leafLayer.show-purchased-leaves .leaf.natural { opacity: .14; filter: saturate(.22) brightness(.8); }
+#leafLayer.show-purchased-leaves .leaf.claimed-a,
+#leafLayer.show-purchased-leaves .leaf.claimed-b,
+#leafLayer.show-purchased-leaves .leaf.claimed-c {
+  opacity: 1;
+  filter: brightness(1.2) saturate(1.35) drop-shadow(0 0 8px rgba(255,233,115,.95)) drop-shadow(0 0 4px rgba(171,55,32,.75));
+  animation: maplewishPurchasedLeafPulse .72s ease-in-out infinite alternate;
+}
+@keyframes maplewishPurchasedLeafPulse {
+  from { filter: brightness(1.08) saturate(1.18) drop-shadow(0 0 4px rgba(255,233,115,.7)); }
+  to { filter: brightness(1.28) saturate(1.42) drop-shadow(0 0 14px rgba(255,233,115,1)) drop-shadow(0 0 5px rgba(171,55,32,.8)); }
+}
 
 .tree-counter {
   position: absolute; z-index: 22; left: 50%; bottom: 17.3%; transform: translateX(-50%);
