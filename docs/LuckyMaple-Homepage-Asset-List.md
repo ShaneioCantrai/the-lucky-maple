@@ -58,16 +58,13 @@ The interactive leaf system should sit above the painted canopy. The painted can
 
 | Asset ID | Description | Runtime form |
 |---|---|---|
-| `lm-leaf-available-green-a` | Available leaf variant A | SVG symbol / alpha PNG |
-| `lm-leaf-available-green-b` | Available leaf variant B | SVG symbol / alpha PNG |
-| `lm-leaf-claimed-red-a` | Claimed red leaf | SVG symbol / alpha PNG |
-| `lm-leaf-claimed-orange-a` | Claimed orange leaf | SVG symbol / alpha PNG |
-| `lm-leaf-claimed-yellow-a` | Claimed yellow leaf | SVG symbol / alpha PNG |
-| `lm-leaf-claimed-olive-a` | Claimed olive/green leaf | SVG symbol / alpha PNG |
-| `lm-leaf-hover-ring` | Soft hover/keyboard-focus highlight | SVG/CSS |
-| `lm-leaf-selected-glow` | Selected-leaf glow | SVG/CSS |
+| `leaf-{colour}.webp` | Permanent purchased-leaf base state | Alpha WebP |
+| `leaf-{colour}-glow.webp` | Purchased highlight / selected state | Alpha WebP |
+| `leaf-{colour}-new.webp` | Brief newly-planted celebration state | Alpha WebP |
+| `leaf-01.webp` … `leaf-12.webp` | Decorative starter/natural foliage variants | Alpha WebP |
+| `lm-leaf-focus-ring` | Keyboard-focus treatment | CSS |
 
-Create 2â€“3 silhouette variations and rotate/scale them algorithmically. Do not create thousands of unique image files.
+Purchased leaves use the canonical MapleWish state assets rather than a generic SVG silhouette. The leaf itself remains visible in every state; highlight mode swaps to glowing leaf artwork instead of drawing a standalone visible halo. Rotate/scale assets algorithmically and reuse the small canonical family rather than creating thousands of unique image files.
 
 A leaf's tree position must be stable over time. Use `leaf_id` plus a versioned deterministic layout seed, or persist coordinates if the art layout later requires exact authored slots.
 

@@ -49,6 +49,7 @@ app.get('/apply.js', (_req, res) => res.sendFile(path.join(repoRoot, 'apply.js')
 app.get('/reset-password.js', (_req, res) => res.sendFile(path.join(repoRoot, 'reset-password.js')));
 app.get('/contact.js', (_req, res) => res.sendFile(path.join(repoRoot, 'contact.js')));
 app.get('/leaf-layout.js', (_req, res) => res.sendFile(path.join(repoRoot, 'leaf-layout.js')));
+app.get('/leaf-assets.js', (_req, res) => res.sendFile(path.join(repoRoot, 'leaf-assets.js')));
 app.get('/styles.css', (_req, res) => res.sendFile(path.join(repoRoot, 'styles.css')));
 app.use('/fr', express.static(path.join(repoRoot, 'fr'), { extensions: ['html'], index: 'index.html' }));
 app.use('/img/web', express.static(path.join(repoRoot, 'img', 'web'), { maxAge: '1h', immutable: false }));

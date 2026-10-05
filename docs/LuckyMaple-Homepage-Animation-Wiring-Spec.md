@@ -172,10 +172,12 @@ Do not animate all bird states at once. Randomize events and impose a minimum qu
 Interactive leaves sit above the painted canopy and use the existing public leaf records.
 
 Behaviour:
-- available leaf: subdued green/olive;
-- claimed leaf: autumn red/orange/yellow/olive;
-- hover/focus: brighten slightly and show a soft ring;
-- selected: persistent glow until leaf card/modal closes;
+- available/decorative leaf: subdued existing foliage sprite;
+- claimed leaf: canonical MapleWish permanent leaf artwork;
+- purchased-highlight mode: swap the claimed leaf to its glow artwork; never show an empty standalone halo;
+- newly planted: show the dedicated `-new` artwork briefly, then settle to glow/base as appropriate;
+- hover/focus: brighten slightly and keep a visible keyboard-focus treatment;
+- selected: use the glow state until the leaf card/modal closes;
 - keyboard focus must be visible;
 - clicking a leaf opens its public card or plant flow.
 

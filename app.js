@@ -1,4 +1,5 @@
 import { CANOPY_ZONES, PURCHASE_LEAF_SLOT_ORDER, isStarterLeafSlot, seeded } from "./leaf-layout.js";
+import { canonicalLeafAssetUrls, purchasedLeafState, resolveLeafAsset } from "./leaf-assets.js";
 
 const NS = "http://www.w3.org/2000/svg";
 const leafLayer = document.getElementById("leafLayer");
@@ -90,6 +91,35 @@ function tierName(cents) {
 }
 const random = seeded(8675309);
 const leaves = [];
+const loadedLeafStateAssets = new Set();
+const failedLeafStateAssets = new Set();
+
+function purchasedHighlightIsActive() {
+  return leafLayer.classList.contains("show-purchased-leaves");
+}
+
+function refreshClaimedLeafAssets() {
+  leaves.filter(leaf => leaf.claimed).forEach(refreshLeafElement);
+}
+
+function preloadLeafStateAssets() {
+  if (typeof Image !== "function") return Promise.resolve();
+  return Promise.all(canonicalLeafAssetUrls().map(url => new Promise(resolve => {
+    const image = new Image();
+    image.onload = () => {
+      loadedLeafStateAssets.add(url);
+      resolve();
+    };
+    image.onerror = () => {
+      if (!failedLeafStateAssets.has(url)) {
+        failedLeafStateAssets.add(url);
+        console.warn("MapleWish leaf state asset unavailable; using fallback:", url);
+      }
+      resolve();
+    };
+    image.src = url;
+  }))).then(refreshClaimedLeafAssets);
+}
 
 function makeLeafElement(leaf) {
   const use = document.createElementNS(NS, "image");
@@ -112,13 +142,23 @@ function refreshLeafElement(leaf) {
   const spriteIndex = leaf.claimed
     ? (leaf.spriteVariant || ((leaf.id * 7) % 12) + 1)
     : natural ? leaf.naturalSpriteVariant : 6;
-  leaf.element.setAttribute("x", leaf.x - leaf.size / 2);
-  leaf.element.setAttribute("y", leaf.y - leaf.size / 2);
-  leaf.element.setAttribute("width", leaf.size);
-  leaf.element.setAttribute("height", leaf.size);
+  const state = leaf.claimed ? purchasedLeafState(leaf, purchasedHighlightIsActive()) : null;
+  const href = leaf.claimed
+    ? resolveLeafAsset(leaf, {
+        highlightMode: purchasedHighlightIsActive(),
+        availableStateAssets: loadedLeafStateAssets,
+      })
+    : `/img/web/leaves/leaf-${String(spriteIndex).padStart(2, "0")}.webp`;
+  const stateScale = state === "new" ? 1.2 : state === "glow" ? 1.05 : 1;
+  const displaySize = leaf.size * stateScale;
+  leaf.element.setAttribute("x", leaf.x - displaySize / 2);
+  leaf.element.setAttribute("y", leaf.y - displaySize / 2);
+  leaf.element.setAttribute("width", displaySize);
+  leaf.element.setAttribute("height", displaySize);
   leaf.element.setAttribute("transform", `rotate(${leaf.rotation} ${leaf.x} ${leaf.y})`);
-  leaf.element.setAttribute("href", `/img/web/leaves/leaf-${String(spriteIndex).padStart(2, "0")}.webp`);
-  leaf.element.setAttribute("class", `leaf ${variant} leaf-tier-${leafTierForAmount(leaf.amountCents)}`);
+  leaf.element.setAttribute("href", href);
+  leaf.element.dataset.leafState = state || (natural ? "natural" : "available");
+  leaf.element.setAttribute("class", `leaf ${variant} ${state ? `leaf-state-${state}` : ""} leaf-tier-${leafTierForAmount(leaf.amountCents)}`);
   leaf.element.setAttribute("aria-label", leaf.claimed
     ? `${tr('Claimed','Réclamée')} ${tierName(leaf.amountCents)} ${leaf.id}`
     : `${tr('Available leaf','Feuille disponible')} ${leaf.id}`);
@@ -135,7 +175,8 @@ for (const { cx, cy, rx, ry, count } of CANOPY_ZONES) {
       id, x: cx + Math.cos(angle) * rx * radius, y: cy + Math.sin(angle) * ry * radius,
       baseSize, size: baseSize, rotation: Math.round(random() * 80 - 40), claimed: false,
       natural: isStarterLeafSlot(id), naturalSpriteVariant: ((id * 5 + 3) % 12) + 1,
-      amountCents: 0, spriteVariant: null, owner: null, message: null, element: null
+      amountCents: 0, spriteVariant: null, owner: null, message: null, plantedAt: null,
+      assetFamily: "red", isNew: false, isSelected: false, element: null
     };
     leaves.push(leaf);
     makeLeafElement(leaf);
@@ -160,36 +201,18 @@ function renderPurchasedLeafHalos() {
     const radius = Math.max(24, leaf.size * 0.72);
 
     // Keep the purchased leaf itself above overlapping decorative/available leaves.
+    // The leaf artwork now owns the visible glow state; this circle is hit-area only.
     leafLayer.appendChild(leaf.element);
 
-    const outer = document.createElementNS(NS, "circle");
-    outer.setAttribute("cx", leaf.x);
-    outer.setAttribute("cy", leaf.y);
-    outer.setAttribute("r", radius + 9);
-    outer.setAttribute("class", "purchased-leaf-halo purchased-leaf-halo-outer");
-    outer.setAttribute("aria-hidden", "true");
-
-    const inner = document.createElementNS(NS, "circle");
-    inner.setAttribute("cx", leaf.x);
-    inner.setAttribute("cy", leaf.y);
-    inner.setAttribute("r", radius);
-    inner.setAttribute("class", "purchased-leaf-halo purchased-leaf-halo-inner");
-    inner.setAttribute("aria-hidden", "true");
-
-    // Transparent hit target on top of every overlapping leaf. Clicking the halo
-    // therefore always opens the purchased leaf that the halo represents.
     const hit = document.createElementNS(NS, "circle");
     hit.setAttribute("cx", leaf.x);
     hit.setAttribute("cy", leaf.y);
     hit.setAttribute("r", radius + 14);
     hit.setAttribute("class", "purchased-leaf-halo purchased-leaf-halo-hit");
     hit.dataset.leafId = String(leaf.id);
-    hit.setAttribute("tabindex", "0");
-    hit.setAttribute("role", "button");
-    hit.setAttribute("aria-label", tr("Open purchased leaf", "Ouvrir la feuille achetée") + " #" + String(leaf.id).padStart(6, "0"));
+    hit.setAttribute("tabindex", "-1");
+    hit.setAttribute("aria-hidden", "true");
 
-    leafLayer.appendChild(outer);
-    leafLayer.appendChild(inner);
     leafLayer.appendChild(hit);
   }
 }
@@ -197,15 +220,16 @@ function renderPurchasedLeafHalos() {
 function focusFirstPurchasedLeaf() {
   const leaf = leaves.find(item => item.claimed && item.element);
   if (!leaf) return;
-  leaf.element.classList.remove("just-planted");
-  void leaf.element.getBoundingClientRect();
-  leaf.element.classList.add("just-planted");
-  leaf.element.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
-  setTimeout(() => leaf.element?.classList.remove("just-planted"), 5000);
+  leaf.element.scrollIntoView({
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "center",
+    inline: "center",
+  });
 }
 
 function setPurchasedLeafHighlight(active) {
   leafLayer.classList.toggle("show-purchased-leaves", active);
+  refreshClaimedLeafAssets();
   if (active) renderPurchasedLeafHalos();
   else clearPurchasedLeafHalos();
 
@@ -237,9 +261,20 @@ showPurchasedLeavesButton?.addEventListener("click", () => {
   }
 });
 
+function setSelectedLeaf(id = null) {
+  for (const item of leaves) {
+    const selected = Boolean(item.claimed && item.id === id);
+    if (item.isSelected !== selected) {
+      item.isSelected = selected;
+      refreshLeafElement(item);
+    }
+  }
+}
+
 function openLeaf(id) {
   const leaf = leaves.find(item => item.id === id);
   if (!leaf) return;
+  setSelectedLeaf(leaf.claimed ? leaf.id : null);
   const number = String(id).padStart(6, "0");
   if (leaf.claimed) {
     const contributionAmount = money(leaf.amountCents || 200).replace(".00 CAD", "");
@@ -257,6 +292,7 @@ function openLeaf(id) {
   }
   leafDialog.showModal();
 }
+leafDialog?.addEventListener("close", () => setSelectedLeaf(null));
 leafLayer.addEventListener("click", event => {
   const haloTarget = event.target.closest?.(".purchased-leaf-halo-hit");
   if (haloTarget) {
@@ -442,7 +478,11 @@ function hydrateCampaignLeaves(rows = []) {
     leaf.size = leaf.baseSize;
     leaf.owner = null;
     leaf.message = null;
+    leaf.plantedAt = null;
     leaf.spriteVariant = null;
+    leaf.assetFamily = "red";
+    leaf.isNew = false;
+    leaf.isSelected = false;
     refreshLeafElement(leaf);
   });
   let filled = 0;
@@ -455,7 +495,9 @@ function hydrateCampaignLeaves(rows = []) {
     leaf.size = leaf.baseSize * leafScaleForAmount(leaf.amountCents);
     leaf.owner = row.display_name || tr("Anonymous Canadian","Canadien·ne anonyme");
     leaf.message = row.message || tr("Planted on MapleWish.","Plantée sur MapleWish.");
+    leaf.plantedAt = row.paid_at || row.planted_at || null;
     leaf.spriteVariant = Number(row.sprite_variant) || null;
+    leaf.assetFamily = "red";
     refreshLeafElement(leaf);
     filled += 1;
   }
@@ -517,12 +559,18 @@ async function loadPublicData() {
 function highlightLeaf(slot, openCard = false) {
   const leaf = leaves[Number(slot) - 1];
   if (!leaf?.element) return;
-  leaf.element.classList.remove("just-planted");
-  void leaf.element.getBoundingClientRect();
-  leaf.element.classList.add("just-planted");
-  leaf.element.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  leaf.isNew = true;
+  refreshLeafElement(leaf);
+  leaf.element.scrollIntoView({
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "center",
+    inline: "center",
+  });
   history.replaceState({}, "", `${location.pathname}#leaf-${Number(slot)}`);
-  setTimeout(() => leaf.element?.classList.remove("just-planted"), 7000);
+  setTimeout(() => {
+    leaf.isNew = false;
+    refreshLeafElement(leaf);
+  }, 7000);
   if (openCard) setTimeout(() => openLeaf(Number(slot)), 650);
 }
 
@@ -627,6 +675,8 @@ document.getElementById("paymentBackToTree")?.addEventListener("click", () => {
   paymentSuccessDialog?.close();
   document.getElementById("home")?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
+
+preloadLeafStateAssets();
 
 loadPublicData().then(() => {
   if (requestedLeafId) openLeaf(requestedLeafId);

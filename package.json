@@ -4,7 +4,7 @@
   "description": "A deliberately simple internet object: one enormous interactive maple tree, pay-what-you-want leaves from $2 CAD, and a separately funded Canada-only weekly promotional giveaway.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test test/*.test.js",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "migrate": "node scripts/migrate.js",

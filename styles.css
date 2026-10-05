@@ -146,70 +146,40 @@ a { color: inherit; }
 #leafLayer.show-purchased-leaves .leaf.natural { opacity: .28; filter: saturate(.42) brightness(.86); }
 #leafLayer.show-purchased-leaves .leaf.claimed-a,
 #leafLayer.show-purchased-leaves .leaf.claimed-b,
-#leafLayer.show-purchased-leaves .leaf.claimed-c {
+#leafLayer.show-purchased-leaves .leaf.claimed-c { opacity: 1 !important; }
+
+/* Purchased-leaf state artwork owns the visible state. These filters are a
+   conservative fallback while individual state assets are loading. */
+.leaf.leaf-state-base { opacity: .98; }
+.leaf.leaf-state-glow {
   opacity: 1 !important;
-  filter: brightness(1.3) saturate(1.55)
-    drop-shadow(0 0 7px rgba(255,244,170,1))
-    drop-shadow(0 0 15px rgba(255,205,65,.95))
-    drop-shadow(0 0 24px rgba(220,95,28,.75));
-  animation: maplewishPurchasedLeafPulse .82s ease-in-out infinite alternate;
+  filter: brightness(1.08) saturate(1.12)
+    drop-shadow(0 0 5px rgba(255,239,145,.72))
+    drop-shadow(0 0 11px rgba(255,184,48,.52));
+}
+.leaf.leaf-state-new {
+  opacity: 1 !important;
+  filter: brightness(1.12) saturate(1.16)
+    drop-shadow(0 0 7px rgba(255,244,171,.82))
+    drop-shadow(0 0 14px rgba(255,174,38,.58));
+  animation: maplewishLeafNew 1s ease-in-out 0s 3 alternate;
+}
+@keyframes maplewishLeafNew {
+  from { opacity: .94; }
+  to { opacity: 1; }
 }
 
+/* Enlarged pointer target only. The old visible SVG rings are intentionally gone. */
 .purchased-leaf-halo {
   pointer-events: none;
-  fill: rgba(255,226,92,.08);
-  vector-effect: non-scaling-stroke;
-  transform-box: fill-box;
-  transform-origin: center;
+  fill: transparent;
+  stroke: transparent;
 }
 .purchased-leaf-halo-hit {
   pointer-events: all;
   fill: rgba(255,255,255,.001);
   stroke: transparent;
   cursor: pointer;
-  outline: none;
-}
-.purchased-leaf-halo-hit:focus-visible {
-  stroke: rgba(255,255,255,.98);
-  stroke-width: 3;
-  filter: drop-shadow(0 0 8px rgba(255,225,90,.95));
-}
-.purchased-leaf-halo-inner {
-  stroke: rgba(255,224,76,.98);
-  stroke-width: 5;
-  filter: drop-shadow(0 0 5px rgba(255,236,136,.95))
-          drop-shadow(0 0 11px rgba(255,174,38,.9));
-  animation: maplewishLeafHaloPulse .9s ease-in-out infinite alternate;
-}
-.purchased-leaf-halo-outer {
-  fill: none;
-  stroke: rgba(255,166,31,.78);
-  stroke-width: 3;
-  stroke-dasharray: 7 5;
-  filter: drop-shadow(0 0 9px rgba(255,193,51,.9));
-  animation: maplewishLeafHaloOuter 1.25s ease-in-out infinite alternate;
-}
-
-@keyframes maplewishPurchasedLeafPulse {
-  from {
-    filter: brightness(1.16) saturate(1.3)
-      drop-shadow(0 0 5px rgba(255,235,125,.9))
-      drop-shadow(0 0 10px rgba(255,177,38,.72));
-  }
-  to {
-    filter: brightness(1.4) saturate(1.7)
-      drop-shadow(0 0 10px rgba(255,250,195,1))
-      drop-shadow(0 0 20px rgba(255,207,67,1))
-      drop-shadow(0 0 30px rgba(220,95,28,.82));
-  }
-}
-@keyframes maplewishLeafHaloPulse {
-  from { opacity: .72; stroke-width: 4; }
-  to { opacity: 1; stroke-width: 7; }
-}
-@keyframes maplewishLeafHaloOuter {
-  from { opacity: .45; stroke-width: 2; }
-  to { opacity: .9; stroke-width: 4; }
 }
 
 .tree-counter {
@@ -342,7 +312,7 @@ label.check em { font-weight: 400; }
 .leaf-tier-option span { color: #776453; font-size: 10px; font-weight: 800; }
 .custom-amount.hidden { display: none; }
 .leaf-contribution { margin: 8px 0 4px; color: var(--green); font-size: 13px; font-weight: 900; }
-.leaf.leaf-tier-25 { filter: drop-shadow(0 2px 3px rgba(99,64,20,.16)); }
+.leaf.leaf-tier-25:not(.leaf-state-glow):not(.leaf-state-new) { filter: drop-shadow(0 2px 3px rgba(99,64,20,.16)); }
 .leaf-card-number { font-size: 12px; font-weight: 900; letter-spacing: .12em; color: var(--green); }
 .leaf-card-message { margin: 14px 0; padding: 14px; border-radius: 14px; background: #efe4cd; font-style: italic; }
 @media (max-width: 1120px) {
@@ -407,7 +377,7 @@ label.check em { font-weight: 400; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; }
-  .scene-bird, .falling-leaf { animation: none !important; }
+  .scene-bird, .falling-leaf, .leaf-state-new { animation: none !important; }
   .ambient-leaves { display: none; }
 }
 
@@ -623,5 +593,3 @@ label.check em { font-weight: 400; }
 .payment-success-details span { color: var(--red-dark); font-size: 22px; font-weight: 900; }
 .payment-success-details small { color: #766452; font-weight: 800; }
 .payment-success-modal .button + .button { margin-top: 9px; }
-.leaf.just-planted { animation: maplewishLeafGlow 1s ease-in-out 0s 6 alternate; }
-@keyframes maplewishLeafGlow { from { filter: drop-shadow(0 0 4px rgba(255,255,255,.45)); } to { filter: drop-shadow(0 0 15px rgba(255,221,82,.95)) drop-shadow(0 0 5px rgba(190,60,35,.7)); } }
