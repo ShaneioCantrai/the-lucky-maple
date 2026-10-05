@@ -205,7 +205,8 @@ a { color: inherit; }
 .hero-steps b { display: block; font-size: 15px; }
 .hero-steps small { display: block; margin-top: 2px; color: #766351; font-size: 11px; line-height: 1.25; }
 
-.leaf { cursor: pointer; pointer-events: bounding-box; transform-box: fill-box; transform-origin: center; transition: opacity .16s ease, filter .16s ease, transform .16s ease; }
+/* SVG leaf rotation attributes already include their absolute pivot. Keep the CSS transform origin at the SVG viewBox origin or Chromium applies the pivot twice and moves leaves off-canvas. */
+.leaf { cursor: pointer; pointer-events: bounding-box; transform-box: view-box; transform-origin: 0 0; transition: opacity .16s ease, filter .16s ease, transform .16s ease; }
 .leaf.available { opacity: .025; filter: saturate(.4) brightness(.9); }
 .leaf.natural { opacity: .58; filter: saturate(.72) brightness(.94); }
 .leaf.claimed-a, .leaf.claimed-b, .leaf.claimed-c { opacity: .96; }
